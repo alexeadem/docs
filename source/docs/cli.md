@@ -2,31 +2,147 @@
 title: Command Line Interface
 ---
 
-> QBO is a client CLI that connects to the qbo API using websockets. It can send a single command as a message and disconnect. Or it can keep the websocket open to continue receiving state messages from the [mirror](?id=qbo-cloud). It runs in docker.
-
-## Configuration
+QBO is a client CLI that connects to the QBO API using websockets. It can send a single command as a message and disconnect, or keep the websocket open to continue receiving state messages from the [mirror](/#Real-time-Communication-System). It runs in Docker.
 
 QBO CLI processes configuration input in the following order:
 
-1. Environment variables
+It prioritizes environment variables over configuration files.
 
-- QBO_UID
-- QBO_AUX
-- QBO_HOST
-- QBO_PORT
+## Environment Variables
 
-2. $HOME/.qbo/cli.json
-3. $HOME/.qbo/.cli.db
+- `QBO_UID`
+- `QBO_AUX`
+- `QBO_HOST`
+- `QBO_PORT`
 
-## Download
+## Configuration Files
 
-> If you are accessing the cluster outside the `qbo` terminal you can install the CLI as follows:
+If no user configuration is found, it defaults to the database configuration:
+
+- `$HOME/.qbo/cli.json`
+- `$HOME/.qbo/.cli.db`
+
+## Setup Credentials
+
+You have two options to configure CLI access:  
+1. **Temporary Web Token** (valid for the duration of your browser session)  
+2. **Service Account** (persistent)
+
+---
+
+### Option 1: Temporary Web Token
+
+Run the following command to retrieve a temporary token:
 
 ```bash
-git clone https://github.com/alexeadem/qbo-ce.git
-cd qbo-ce
-. ./alias
+qbo get user -l | jq .cli[]?
 ```
+
+Example output:
+
+```json
+{
+  "qbo_port": 443,
+  "qbo_host": "172.17.0.1",
+  "qbo_uid": "6cec21fb-67e0-4b0d-9493-8dd6b01b87ca"
+}
+```
+
+**Note:** Replace `172.17.0.1` with the domain name from your browser, e.g.:
+
+```
+o-cda8a5a6.cloud.eadem.com
+```
+
+Then copy the entire output into:
+
+```bash
+$HOME/.qbo/cli.json
+```
+
+---
+
+### Option 2: Service Account
+
+From the QBO web console, retrieve your service account credentials:
+
+```bash
+qbo get user qbocloud.user.001@gmail.com | jq .users[]?.cli.conf
+```
+
+Example output:
+
+```json
+{
+  "qbo_uid": {
+    "crv": "P-521",
+    "kty": "EC",
+    "x": "AEptVYaMtdrIk1Tjs0OQoVkNts7_vB-kAek8Y2IvxlEdeBx36zQ2V80v2VRfk1Cj30LyGNmT7ALC040RAb0nhgHY",
+    "y": "APGBOURcSdfyHhuyDcrm8gOyk-VZmUhpIeWCaVEdcvT8zV_QN0qMn3Ay0g6JHoQHaFW4IK8zWZsnHrlqb_OGZG2y"
+  },
+  "qbo_aux": "071fc218-0759-4ca3-aaf0-611dfea1d831",
+  "qbo_port": 443,
+  "qbo_host": "o-cda8a5a6.cloud.eadem.com",
+  "qbo_user": "qbocloud.user.001@gmail.com",
+  "d": "AUFOqTbugNjxGZzX9oUTUbl8rHKKjZ-wSVFZE1IePf9JFiKiDMVc1drQVbYxHe9qyE5u--KFedF8QPE3WOH0DUVy"
+}
+```
+
+Then copy the output into:
+
+```bash
+$HOME/.qbo/cli.json
+```
+
+## Downloading and Running QBO CLI
+
+If you are accessing the cluster **outside** the `qbo` terminal, you can install and use the CLI by creating a shell alias:
+
+---
+
+### Step-by-step Instructions
+
+```bash
+ALIAS_FILE="./alias"
+REPO="eadem"
+
+cat <<EOF > "$ALIAS_FILE"
+#!/bin/bash
+REPO=$REPO
+alias qbo="docker run --rm --name qbo-cli \
+-e CLI_LOG=$CLI_LOG \
+-e QBO_HOST=$QBO_HOST \
+-e QBO_PORT=$QBO_PORT \
+-e QBO_UID=$QBO_UID \
+-e QBO_AUX=$QBO_AUX \
+--network host -i \
+-v ~/.qbo:/tmp/qbo \
+$REPO/cli:latest cli"
+EOF
+
+chmod +x "$ALIAS_FILE"
+. ./alias
+
+qbo version | jq .version[]?
+```
+
+Example output:
+
+```json
+{
+  "qbo": "cli:stage.65845805",
+  "arch": "__x86_64__"
+}
+{
+  "docker": "24.0.5",
+  "qbo": "api:stage.62b3278e",
+  "host": "o-cda8a5a6.cloud.eadem.com",
+  "arch": "__x86_64__"
+}
+```
+
+This will allow you to run the `qbo` command as a Dockerized CLI using your environment configuration.
+
 
 ## Cluster Operations
 
