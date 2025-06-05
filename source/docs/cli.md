@@ -32,6 +32,8 @@ You have two options to configure CLI access:
 
 ### Option 1: Temporary Web Token
 
+{% preview "cli_web.png" %}
+
 Run the following command to retrieve a temporary token:
 
 ```bash
@@ -63,6 +65,8 @@ $HOME/.qbo/cli.json
 ---
 
 ### Option 2: Service Account
+
+{% preview "cli_sa.png" %}
 
 From the QBO web console, retrieve your service account credentials:
 

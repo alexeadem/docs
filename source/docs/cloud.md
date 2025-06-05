@@ -31,7 +31,7 @@ Access to QBO Cloud can be configured using two main interfaces:
 - Access all QBO resources and operations through a browser
 - Ideal for interactive workflows, administrators, and real-time monitoring
 
-For a full walkthrough of the web interface, refer to the [Web Interface Guide](/web).
+For a full walkthrough of the web interface, refer to the [Web Interface Guide](web).
 
 
 ### CLI Access
