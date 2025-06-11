@@ -177,39 +177,65 @@ This calculator translates your claimed vCPU and RAM allocations in a shared clo
 </div>
 
   <script>
-    function qboCalculate() {
-      const claimedVCPUs = +document.getElementById('claimedVCPUs').value;
-      const claimedRAMGB = +document.getElementById('claimedRAMGB').value;
-      const avgCPUUtilPercent = +document.getElementById('avgCPUUtilPercent').value;
-      const avgRAMUtilPercent = +document.getElementById('avgRAMUtilPercent').value;
-      const metalEfficiencyGainPercent = +document.getElementById('metalEfficiencyGainPercent').value;
-      const metalNodeVCPUs = +document.getElementById('metalNodeVCPUs').value;
-      const metalNodeRAMGB = +document.getElementById('metalNodeRAMGB').value;
+function qboCalculate() {
+  const claimedVCPUs = +document.getElementById('claimedVCPUs').value;
+  const claimedRAMGB = +document.getElementById('claimedRAMGB').value;
+  const avgCPUUtilPercent = +document.getElementById('avgCPUUtilPercent').value;
+  const avgRAMUtilPercent = +document.getElementById('avgRAMUtilPercent').value;
+  const metalEfficiencyGainPercent = +document.getElementById('metalEfficiencyGainPercent').value;
 
-      const sustainedVCPUs = claimedVCPUs * (avgCPUUtilPercent / 100);
-      const sustainedRAM = claimedRAMGB * (avgRAMUtilPercent / 100);
+  const sustainedVCPUs = claimedVCPUs * (avgCPUUtilPercent / 100);
+  const sustainedRAM = claimedRAMGB * (avgRAMUtilPercent / 100);
 
-      const adjustedVCPUs = sustainedVCPUs * (1 - metalEfficiencyGainPercent / 100);
-      const adjustedRAM = sustainedRAM * (1 - metalEfficiencyGainPercent / 100);
+  const adjustedVCPUs = sustainedVCPUs * (1 - metalEfficiencyGainPercent / 100);
+  const adjustedRAM = sustainedRAM * (1 - metalEfficiencyGainPercent / 100);
 
-      const nodesByCPU = adjustedVCPUs / metalNodeVCPUs;
-      const nodesByRAM = adjustedRAM / metalNodeRAMGB;
+  const standardCPUBanks = [4, 8, 16, 24, 32, 48, 64, 72, 80, 92, 96, 128];
+  const standardRAMBanks = [8, 16, 54, 128, 256, 512];
 
-      const requiredNodes = Math.ceil(Math.max(nodesByCPU, nodesByRAM));
-      const totalCores = requiredNodes * metalNodeVCPUs;
-      const totalRAMGB = requiredNodes * metalNodeRAMGB;
+  let best = {
+    nodes: Infinity,
+    cpu: null,
+    ram: null
+  };
 
-      document.getElementById('qbo-result').innerHTML = `
-        <table>
-          <tr><th>Metric</th><th>Value</th></tr>
-          <tr><td>Required Metal Nodes</td><td>${requiredNodes}</td></tr>
-          <tr><td>Total Physical Cores</td><td>${totalCores}</td></tr>
-          <tr><td>Total RAM</td><td>${totalRAMGB} GB</td></tr>
-        </table>
-      `;
+  for (const cpu of standardCPUBanks) {
+    for (const ram of standardRAMBanks) {
+      const nodesByCPU = adjustedVCPUs / cpu;
+      const nodesByRAM = adjustedRAM / ram;
+      const nodes = Math.ceil(Math.max(nodesByCPU, nodesByRAM));
+      const finalNodes = Math.max(nodes, 3); // ensure minimum of 3
 
-      drawCanvas(avgCPUUtilPercent);
+      if (finalNodes < best.nodes) {
+        best = { nodes: finalNodes, cpu, ram };
+      }
     }
+  }
+
+  const requiredNodes = best.nodes;
+  const perNodeCPU = best.cpu;
+  const perNodeRAM = best.ram;
+  const totalCores = requiredNodes * perNodeCPU;
+  const totalRAMGB = requiredNodes * perNodeRAM;
+
+  document.getElementById('qbo-result').innerHTML = `
+    <table>
+      <tr><th>Metric</th><th>Value</th></tr>
+      <tr><td>Required Metal Nodes</td><td>${requiredNodes}</td></tr>
+      <tr><td>CPU per Node</td><td>${perNodeCPU} vCPUs</td></tr>
+      <tr><td>RAM per Node</td><td>${perNodeRAM} GB</td></tr>
+      <tr><td>Total Physical Cores</td><td>${totalCores}</td></tr>
+      <tr><td>Total RAM</td><td>${totalRAMGB} GB</td></tr>
+    </table>
+  `;
+
+  drawCanvas(avgCPUUtilPercent);
+}
+
+
+
+
+
 
     function drawCanvas(avgCPUUtilPercent) {
       const canvas = document.getElementById('qbo-graph');

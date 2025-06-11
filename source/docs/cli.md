@@ -102,7 +102,6 @@ $HOME/.qbo/cli.json
 
 If you are accessing the cluster **outside** the `qbo` terminal, you can install and use the CLI by creating a shell alias:
 
----
 
 ### Step-by-step Instructions
 
