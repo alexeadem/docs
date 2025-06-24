@@ -1,0 +1,9 @@
+title: Deploying MinIO AIStore with QBO Container Engine (QCE)
+description: This demo shows how to deploy MinIO AIStore on a GPU-powered QBO instance using native systemd and TLS, delivering metal-grade disk and network performance with zero VM overhead.
+link: /demos/aistor/
+preview: /demos/aistor/
+tags:
+  - minio
+  - storage
+  - s3
+  - aistore
