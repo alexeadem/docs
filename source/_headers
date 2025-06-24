@@ -1,0 +1,3 @@
+/*
+  Permissions-Policy: picture-in-picture=(self "https://www.youtube.com"), fullscreen=(self "https://www.youtube.com")
+
