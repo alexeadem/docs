@@ -1,7 +1,6 @@
 ---
-title: MinIO 
+title: MinIO
 ---
-
 ## MinIO on QBO - Deploying High-Performance Object Storage
 
 {% preview "minio.svg" %}
@@ -14,170 +13,195 @@ QBO's **Kubernetes in Docker** approach enhances **performance and portability**
 
 In this **demo**, we will walk through setting up a **distributed MinIO deployment** on QBO, configuring **external access**, and testing **data uploads** using `mc` (MinIO Client).
 
-{% youtube xKMJdhqyuMs %}
+{% youtube apm9bcOiOYQ %}
 
 ---
 
-## **1 Setting Up QBO Cluster**
+## **Step-by-Step Deployment Guide**
 
-First, we need a QBO Kubernetes cluster:
+### **1. Check QBO Version**
+
+Display QBO version information:
 
 ```bash
 qbo version | jq .version[]?
 ```
 
-Check if the cluster already exists:
+### **2. Create or Retrieve Cluster**
+
+Check if a cluster named `minio` exists, and create it if needed:
 
 ```bash
-qbo get cluster $(basename "$PWD") | jq -e '.clusters[]?'
+qbo get cluster minio | jq -e '.clusters[]?'
+qbo add cluster minio -n 4 -i hub.docker.com/kindest/node:v1.32.0 | jq
 ```
 
-If it does not exist, create one:
+### **3. Retrieve Node Information**
+
+List all nodes in the cluster:
 
 ```bash
-qbo add cluster $(basename "$PWD") -n 4 -i hub.docker.com/kindest/node:v1.32.0 | jq
+qbo get nodes minio | jq .nodes[]?
 ```
 
-Retrieve nodes:
+### **4. Configure Kubeconfig**
+
+Set your Kubernetes configuration:
 
 ```bash
-qbo get nodes $(basename "$PWD") | jq .nodes[]?
+qbo get cluster minio -k | jq -r '.output[]?.kubeconfig | select( . != null)' > $HOME/.qbo/minio.conf
+export KUBECONFIG=$HOME/.qbo/minio.conf
 ```
 
-Set Kubernetes configuration:
+### **5. Verify Nodes**
 
-```bash
-qbo get cluster $(basename "$PWD") -k | jq -r '.output[]?.kubeconfig | select( . != null)' > $HOME/.qbo/$(basename "$PWD").conf
-export KUBECONFIG=$HOME/.qbo/$(basename "$PWD").conf
-```
-
-Verify nodes:
+Ensure the cluster is ready:
 
 ```bash
 kubectl get nodes
 ```
 
----
+### **6. Deploy Headless Service**
 
-## **2 Deploying Distributed MinIO**
-
-Apply the **MinIO StatefulSet**:
+Apply the headless service required for MinIO internode communication:
 
 ```bash
-cat distributed/minio-distributed-statefulset.yaml
-kubectl apply -f distributed/minio-distributed-statefulset.yaml
-```
-
-Deploy the **headless service**:
-
-```bash
-cat distributed/minio-distributed-headless-service.yaml
 kubectl apply -f distributed/minio-distributed-headless-service.yaml
 ```
 
-Deploy the **LoadBalancer service** for external access:
+### **7. Generate TLS Secrets**
+
+Create and apply TLS secrets using ACME certificates retrieved from QBO:
 
 ```bash
-cat distributed/minio-distributed-service.yaml
-kubectl apply -f distributed/minio-distributed-service.yaml
+qbo get acme -A | jq
+kubectl get secret minio-tls -n default -o jsonpath="{.data.tls\.crt}" | base64 -d
+kubectl get secret minio-tls -n default -o jsonpath="{.data.tls\.key}" | base64 -d
 ```
 
-Check the deployment:
+### **8. Create Access Credentials**
+
+Use the cluster UUID as the MinIO password and store credentials:
 
 ```bash
-kubectl get pods -n default
-kubectl describe pod/minio -n default
-kubectl logs pod/minio -n default
+UUID=$(qbo get cluster minio | jq -r '.clusters[]?.id')
+kubectl create secret generic minio-creds --from-literal=MINIO_ACCESS_KEY=qbo --from-literal=MINIO_SECRET_KEY=$UUID --dry-run=client -o yaml | kubectl apply -f -
+kubectl get secret minio-creds -o jsonpath='{.data.MINIO_ACCESS_KEY}' | base64 -d && echo
+kubectl get secret minio-creds -o jsonpath='{.data.MINIO_SECRET_KEY}' | base64 -d && echo
 ```
 
----
+### **9. Deploy MinIO StatefulSet**
 
-## **3 Installing MinIO Client (mc)**
-
-If `mc` is not installed, install it dynamically:
+Create the StatefulSet for distributed MinIO:
 
 ```bash
-ARCH=$(uname -m)
-if [[ "$ARCH" == "x86_64" ]]; then ARCH="amd64"; elif [[ "$ARCH" == "aarch64" ]]; then ARCH="arm64"; else echo "Unsupported architecture: $ARCH"; exit 1; fi
+kubectl apply -f distributed/minio-distributed-statefulset.yaml
+```
+
+### **10. Expose MinIO via LoadBalancer**
+
+Replace the default service and expose MinIO:
+
+```bash
+kubectl delete svc minio
+kubectl apply -f minio-svc.yaml
+```
+
+### **11. Deploy Ingress Controller and Routes**
+
+Set up ingress-nginx and apply MinIO ingress configs:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.1/deploy/static/provider/baremetal/deploy.yaml
+kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec": {"type": "LoadBalancer"}}'
+watch kubectl get job ingress-nginx-admission-patch -n ingress-nginx
+kubectl apply -f minio-console-ingress.yaml
+kubectl apply -f minio-s3-ingress.yaml
+```
+
+### **12. Restart and Inspect**
+
+Restart the MinIO statefulset and verify:
+
+```bash
+kubectl rollout restart statefulset minio
+watch kubectl get pods -n default
+kubectl describe pod/minio-0 -n default
+kubectl get pvc
+```
+
+### **13. Install MinIO Client**
+
+Download and install `mc` (MinIO Client):
+
+```bash
 cd ~
-curl -sSL -o mc https://dl.min.io/client/mc/release/linux-$ARCH/mc
+curl -sSL -o mc https://dl.min.io/client/mc/release/linux-$(uname -m)/mc
 mkdir -p ~/.local/bin
 sudo install -m 555 mc ~/.local/bin/mc
-export PATH="~/.local/bin:$PATH"
 ```
 
----
+### **14. Test DNS Resolution**
 
-## **4 Validating MinIO Service**
-
-Check if MinIO’s **internal DNS resolution** is working:
+Confirm internal DNS works:
 
 ```bash
 kubectl run busybox --image=busybox:latest --restart=Never -it --rm -- nslookup minio.default.svc.cluster.local
 ```
 
-Retrieve **external LoadBalancer IP**:
+### **15. Add Local DNS Records (Optional for Development)**
+
+If not using an external DNS provider, manually update `/etc/hosts`:
 
 ```bash
-LB=$(kubectl get svc minio -n default --ignore-not-found -o json | jq -r '.spec.externalIPs[0] | select ( . != null)')
+HOSTNAME=$(hostname | sed 's/^[^.]*\.//')
+LB=$(kubectl get svc ingress-nginx-controller -n ingress-nginx --ignore-not-found -o json | jq -r '.spec.externalIPs[0] | select ( . != null)')
+
+# Show recommended records
+echo -e "\nAdd the following DNS records to your DNS provider or local /etc/hosts:\n"
+echo -e "A\ts3.$HOSTNAME\t$LB"
+echo -e "A\tconsole.$HOSTNAME\t$LB"
+
+# Append to local hosts file (requires sudo)
+LINE="$LB s3.$HOSTNAME console.$HOSTNAME"
+TMP=$(mktemp)
+grep -vE "s3\\.$HOSTNAME|console\\.$HOSTNAME" /etc/hosts > "$TMP"
+echo "$LINE" >> "$TMP"
+sudo cp "$TMP" /etc/hosts && rm "$TMP"
 ```
 
-Test MinIO API:
+### **16. Configure Client and Upload Data**
+
+Set the MinIO alias and access the admin interface:
 
 ```bash
-curl -I http://$LB:9000
-```
-
-Configure MinIO Client (`mc`):
-
-```bash
-mc alias set myminio http://$LB:9000 minio minio123
+HOSTNAME=$(hostname | sed 's/^[^.]*\.//')
+mc alias set myminio https://s3.$HOSTNAME qbo $UUID
 mc admin info myminio
 ```
 
----
-
-## **5 Uploading and Retrieving Data**
-
-Create a new bucket:
+Create a bucket and upload a test file:
 
 ```bash
 mc mb myminio/mybucket
-```
-
-Upload a test file:
-
-```bash
 echo "Hello MinIO!" > testfile.txt
 mc cp testfile.txt myminio/mybucket/
-```
-
-List stored objects:
-
-```bash
 mc ls myminio/mybucket/
 ```
 
+Access Information:
+
+```bash
+# USER: qbo
+# PASSWORD: $UUID
+# S3: https://s3.$HOSTNAME
+# URL: https://minio.$HOSTNAME
+```
+{% preview 'Screenshot From 2025-06-24 10-24-14.png' %}
+{% preview 'Screenshot From 2025-06-24 10-11-40.png' %}
 ---
 
-## **6 Accessing MinIO Web UI**
-
-MinIO’s **Web UI** runs on port `9001`. Access it via the LoadBalancer:
-
-```
-http://$LB:9001
-```
-
-Credentials:
-
-- **User**: `minio`
-- **Password**: `minio123`
-
-{% preview 'Screenshot From 2025-01-30 01-42-23.png' %}
-
----
-
-## **7 Why MinIO on QBO? Performance and Portability**
+## **Why MinIO on QBO? Performance and Portability**
 
 ### **Performance Benefits**
 
@@ -191,7 +215,7 @@ Credentials:
 
 ---
 
-## **8 Conclusion**
+## **Conclusion**
 
 By deploying MinIO on QBO, we achieve **scalable, high-performance object storage** with full Kubernetes integration.
 
