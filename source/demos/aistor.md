@@ -77,10 +77,12 @@ ssh -o StrictHostKeyChecking=no -i $HOME/.qbo/aistor_object_store.crt qbo@$ADDR 
 ### 6. Download MinIO binary and install license
 ```bash
 ssh -o StrictHostKeyChecking=no -i $HOME/.qbo/aistor_object_store.crt qbo@$ADDR 'curl -sSL https://dl.min.io/aistor/minio/release/linux-amd64/minio -o ~/minio && chmod +x ~/minio'
+# License can be retrieved from: https://min.io/download?view=aistor
 scp -O -o StrictHostKeyChecking=no -i $HOME/.qbo/aistor_object_store.crt ./minio.license qbo@$ADDR:minio.license
 ```
 
 ### 7. Create and upload the systemd service
+> Note: The instance ID (UUID) is used as the MinIO qbo password
 ```bash
 UUID=$(qbo get instance aistor_object_store | jq -r '.instances[]?.id')
 cat > minio.service <<EOF
@@ -105,13 +107,30 @@ ssh -o StrictHostKeyChecking=no -i $HOME/.qbo/aistor_object_store.crt qbo@$ADDR 
 ssh -o StrictHostKeyChecking=no -i $HOME/.qbo/aistor_object_store.crt qbo@$ADDR 'sudo systemctl daemon-reload && sudo systemctl enable --now minio && sudo systemctl restart minio'
 ```
 
-### 8. Add to /etc/hosts for local DNS
+
+### 8. Verify MinIO is running
+```bash
+# Check systemd journal logs for MinIO
+ssh -o StrictHostKeyChecking=no -i $HOME/.qbo/aistor_object_store.crt qbo@$ADDR 'sudo journalctl -t minio -n 20 --no-pager'
+
+# Run health check — should return 200 on success
+code=$(curl -s -o /dev/null -w '%{http_code}' https://aistor.$HOSTNAME:9000/minio/health/ready)
+
+if [ "$code" = "200" ]; then
+  echo -e "\033[32mMinIO is healthy: $code\033[0m"
+else
+  echo -e "\033[31mMinIO health check failed: $code\033[0m"
+fi
+```
+
+
+### 9. Add to /etc/hosts for local DNS
 ```bash
 HOSTNAME=$(hostname | sed 's/^[^.]*\.//')
 echo "$ADDR aistor.$HOSTNAME" | sudo tee -a /etc/hosts
 ```
 
-### 9. Install mc (MinIO Client) if needed
+### 10. Install mc (MinIO Client) if needed
 ```bash
 ARCH=$(uname -m)
 [ "$ARCH" = "x86_64" ] && ARCH="amd64"
@@ -120,7 +139,7 @@ mkdir -p ~/.local/bin
 sudo install -m 555 mc ~/.local/bin/mc
 ```
 
-### 10. Configure `mc` and test upload
+### 11. Configure `mc` and test upload
 ```bash
 mc alias set myminio https://aistor.$HOSTNAME:9000 qbo $UUID
 mc admin info myminio
@@ -137,10 +156,11 @@ mc ls myminio/mybucket/
 
 <!-- {% preview 'Screenshot From 2025-06-23 23-56-50.png' %} -->
 
-
-```text
-USER     qbo
-PASSWORD $UUID
-S3       https://aistor.$HOSTNAME:9000
-Console  https://aistor.$HOSTNAME:9001
+```
+mc ls myminio/mybucket/
+[2025-06-24 15:20:22 UTC]    13B STANDARD testfile.txt
+USER     qbo                   
+PASSWORD 0acc380e-6d10-49c7-945d-9f8f35549cd8
+S3       https://aistor.cloud.levitas.dev:9000
+URL      https://aistor.cloud.levitas.dev:9001
 ```
