@@ -17,7 +17,7 @@
       <tr>
         <th>Resource Type</th>
         <th>Quantity</th>
-        <th>QBO Unit Rate</th>
+        <th>Hourly QBO Unit Rate<br></th>
         <th>Monthly QBO Units</th>
         <th>Monthly Cost (USD)</th>
       </tr>
@@ -73,32 +73,32 @@
 
   <script>
     const gpuModels = {
-      "A100 80GB": 3.00,
-      "A100 40GB": 2.80,
-      "H100": 4.50,
-      "L40S": 2.50,
-      "L4": 1.50,
-      "RTX A6000": 2.20,
-      "RTX 6000 Ada": 2.80,
-      "RTX A5000": 1.80,
-      "RTX 3090": 1.50,
-      "RTX 3080": 1.20,
-      "RTX 3070": 1.00,
-      "T4": 0.80,
-      "V100 32GB": 2.00,
-      "V100 16GB": 1.80,
-      "P100": 1.20,
-      "P40": 0.90,
-      "A2": 0.60,
-      "K80": 0.30,
-      "Jetson Nano": 0.10,
-      "Jetson TX1": 0.15,
-      "Jetson TX2": 0.20,
-      "Jetson Xavier NX": 0.40,
-      "Jetson AGX Xavier": 0.60,
-      "Jetson Orin NX": 0.80,
-      "Jetson Orin AGX": 1.00
-    };
+  "A100 80GB": 2.50,
+  "A100 40GB": 2.25,
+  "H100": 3.50,
+  "L40S": 2.00,
+  "L4": 1.25,
+  "RTX A6000": 1.75,
+  "RTX 6000 Ada": 2.25,
+  "RTX A5000": 1.50,
+  "RTX 3090": 1.20,
+  "RTX 3080": 1.00,
+  "RTX 3070": 0.80,
+  "T4": 0.60,
+  "V100 32GB": 1.75,
+  "V100 16GB": 1.50,
+  "P100": 1.00,
+  "P40": 0.75,
+  "A2": 0.40,
+  "K80": 0.20,
+  "Jetson Nano": 0.08,
+  "Jetson TX1": 0.10,
+  "Jetson TX2": 0.12,
+  "Jetson Xavier NX": 0.25,
+  "Jetson AGX Xavier": 0.40,
+  "Jetson Orin NX": 0.60,
+  "Jetson Orin AGX": 0.80
+};
 
     const gpuSelect = document.getElementById('gpu_model');
     Object.keys(gpuModels).forEach(model => {
@@ -113,7 +113,7 @@
       const hoursPerMonth = 720;
 
       const cpuQty = parseFloat(document.getElementById('cpu_qty').value) || 0;
-      const cpuRate = 0.1;
+      const cpuRate = 0.05;
       const cpuUnits = cpuQty * cpuRate * hoursPerMonth;
 
       const gpuQty = parseFloat(document.getElementById('gpu_qty').value) || 0;
@@ -121,15 +121,15 @@
       const gpuUnits = gpuQty * gpuRate * hoursPerMonth;
 
       const ramQty = parseFloat(document.getElementById('ram_qty').value) || 0;
-      const ramRate = 0.01;
+      const ramRate = 0.005;
       const ramUnits = ramQty * ramRate * hoursPerMonth;
 
       const diskQty = parseFloat(document.getElementById('disk_qty').value) || 0;
-      const diskRate = 0.001;
+      const diskRate = 0.0005;
       const diskUnits = diskQty * diskRate * hoursPerMonth;
 
       const netQty = parseFloat(document.getElementById('net_qty').value) || 0;
-      const netRate = 0.5;
+      const netRate = 0.25;
       const netUnits = netQty * netRate;
 
       const totalUnits = cpuUnits + gpuUnits + ramUnits + diskUnits + netUnits;
