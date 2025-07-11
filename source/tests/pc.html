@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QBO Pricing Calculator</title>
+  <style>
+    table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
+    th, td { padding: 0.5em; border: 1px solid #ccc; text-align: left; }
+    select, input { width: 100%; }
+    tfoot td { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>QBO Unit Pricing Calculator</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Resource Type</th>
+        <th>Quantity</th>
+        <th>QBO Unit Rate</th>
+        <th>Monthly QBO Units</th>
+        <th>Monthly Cost (USD)</th>
+      </tr>
+    </thead>
+    <tbody id="calc-body">
+      <tr>
+        <td>CPU Core</td>
+        <td><input type="number" value="64" id="cpu_qty"></td>
+        <td>0.1</td>
+        <td id="cpu_units"></td>
+        <td id="cpu_cost"></td>
+      </tr>
+      <tr>
+        <td>GPU
+          <br><small>Select GPU Model</small><br>
+          <select id="gpu_model"></select>
+        </td>
+        <td><input type="number" value="1" id="gpu_qty"></td>
+        <td id="gpu_rate"></td>
+        <td id="gpu_units"></td>
+        <td id="gpu_cost"></td>
+      </tr>
+      <tr>
+        <td>RAM (GB)</td>
+        <td><input type="number" value="256" id="ram_qty"></td>
+        <td>0.01</td>
+        <td id="ram_units"></td>
+        <td id="ram_cost"></td>
+      </tr>
+      <tr>
+        <td>Disk (GB)</td>
+        <td><input type="number" value="1000" id="disk_qty"></td>
+        <td>0.001</td>
+        <td id="disk_units"></td>
+        <td id="disk_cost"></td>
+      </tr>
+      <tr>
+        <td>Network (TB)</td>
+        <td><input type="number" value="10" id="net_qty"></td>
+        <td>0.5</td>
+        <td id="net_units"></td>
+        <td id="net_cost"></td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="3">Total</td>
+        <td id="total_units"></td>
+        <td id="total_cost"></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <script>
+    const gpuModels = {
+      "A100 80GB": 3.00,
+      "A100 40GB": 2.80,
+      "H100": 4.50,
+      "L40S": 2.50,
+      "L4": 1.50,
+      "RTX A6000": 2.20,
+      "RTX 6000 Ada": 2.80,
+      "RTX A5000": 1.80,
+      "RTX 3090": 1.50,
+      "RTX 3080": 1.20,
+      "RTX 3070": 1.00,
+      "T4": 0.80,
+      "V100 32GB": 2.00,
+      "V100 16GB": 1.80,
+      "P100": 1.20,
+      "P40": 0.90,
+      "A2": 0.60,
+      "K80": 0.30,
+      "Jetson Nano": 0.10,
+      "Jetson TX1": 0.15,
+      "Jetson TX2": 0.20,
+      "Jetson Xavier NX": 0.40,
+      "Jetson AGX Xavier": 0.60,
+      "Jetson Orin NX": 0.80,
+      "Jetson Orin AGX": 1.00
+    };
+
+    const gpuSelect = document.getElementById('gpu_model');
+    Object.keys(gpuModels).forEach(model => {
+      const option = document.createElement('option');
+      option.value = model;
+      option.textContent = model;
+      gpuSelect.appendChild(option);
+    });
+    gpuSelect.value = "A100 80GB";
+
+    function calculate() {
+      const hoursPerMonth = 720;
+
+      const cpuQty = parseFloat(document.getElementById('cpu_qty').value) || 0;
+      const cpuRate = 0.1;
+      const cpuUnits = cpuQty * cpuRate * hoursPerMonth;
+
+      const gpuQty = parseFloat(document.getElementById('gpu_qty').value) || 0;
+      const gpuRate = gpuModels[gpuSelect.value];
+      const gpuUnits = gpuQty * gpuRate * hoursPerMonth;
+
+      const ramQty = parseFloat(document.getElementById('ram_qty').value) || 0;
+      const ramRate = 0.01;
+      const ramUnits = ramQty * ramRate * hoursPerMonth;
+
+      const diskQty = parseFloat(document.getElementById('disk_qty').value) || 0;
+      const diskRate = 0.001;
+      const diskUnits = diskQty * diskRate * hoursPerMonth;
+
+      const netQty = parseFloat(document.getElementById('net_qty').value) || 0;
+      const netRate = 0.5;
+      const netUnits = netQty * netRate;
+
+      const totalUnits = cpuUnits + gpuUnits + ramUnits + diskUnits + netUnits;
+      const totalCost = totalUnits * 1;
+
+      document.getElementById('cpu_units').textContent = cpuUnits.toFixed(2);
+      document.getElementById('cpu_cost').textContent = (cpuUnits).toFixed(2);
+
+      document.getElementById('gpu_rate').textContent = gpuRate.toFixed(2);
+      document.getElementById('gpu_units').textContent = gpuUnits.toFixed(2);
+      document.getElementById('gpu_cost').textContent = gpuUnits.toFixed(2);
+
+      document.getElementById('ram_units').textContent = ramUnits.toFixed(2);
+      document.getElementById('ram_cost').textContent = ramUnits.toFixed(2);
+
+      document.getElementById('disk_units').textContent = diskUnits.toFixed(2);
+      document.getElementById('disk_cost').textContent = diskUnits.toFixed(2);
+
+      document.getElementById('net_units').textContent = netUnits.toFixed(2);
+      document.getElementById('net_cost').textContent = netUnits.toFixed(2);
+
+      document.getElementById('total_units').textContent = totalUnits.toFixed(2);
+      document.getElementById('total_cost').textContent = totalCost.toFixed(2);
+    }
+
+    document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', calculate));
+    calculate();
+  </script>
+</body>
+</html>
+

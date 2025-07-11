@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Neural Network with Animated Curved Lines</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body {
+      margin: 0;
+      background-color: #111;
+      color: #00ffff;
+      font-family: sans-serif;
+      text-align: center;
+    }
+    h2 {
+      margin: 20px 0;
+    }
+    #map {
+      width: 100%;
+      height: 600px;
+      background-color: #000; /* ensure map div is black */
+    }
+    .pulse-line {
+      stroke: #00ffff;
+      stroke-width: 2;
+      fill: none;
+      stroke-dasharray: 4, 6;
+      animation: dashmove 6s linear infinite;
+    }
+    .leaflet-container {
+      background: #000 !important; /* force map background black */
+    }
+    @keyframes dashmove {
+      from { stroke-dashoffset: 0; }
+      to { stroke-dashoffset: -50; }
+    }
+  </style>
+</head>
+<body>
+<h2>Neural Network</h2>
+<div id="map"></div>
+
+<!-- Leaflet + Leaflet.curve plugin -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-curve@1.0.0/leaflet.curve.js"></script>
+
+<script>
+  var map = L.map('map').setView([20, 0], 2);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap & CartoDB',
+    subdomains: 'abcd',
+    maxZoom: 10
+  }).addTo(map);
+
+  var points = [
+    ["Buenos Aires", -34.6037, -58.3816],
+    ["Sydney", -33.8688, 151.2093],
+    ["Sao Paulo", -23.5505, -46.6333],
+    ["Frankfurt", 50.1109, 8.6821],
+    ["Tokyo 3", 35.6895, 139.6917],
+    ["Mexico City 2", 19.4326, -99.1332],
+    ["Amsterdam", 52.3676, 4.9041],
+    ["Singapore", 1.3521, 103.8198],
+    ["London", 51.5072, -0.1276],
+    ["Ashburn", 39.0438, -77.4874],
+    ["Chicago", 41.8781, -87.6298],
+    ["Dallas", 32.7767, -96.7970],
+    ["Los Angeles", 34.0522, -118.2437],
+    ["Miami 2", 25.7617, -80.1918]
+  ];
+
+  // Add city markers
+  for (let i = 0; i < points.length; i++) {
+    L.marker([points[i][1], points[i][2]]).addTo(map).bindPopup(points[i][0]);
+  }
+
+  
+  for (let i = 0; i < points.length - 1; i++) {
+    let from = points[i];
+    let to = points[i + 1];
+
+    let line = L.polyline([[from[1], from[2]], [to[1], to[2]]], {
+      color: "#00ffff",
+      weight: 2,
+      opacity: 0.8,
+      className: "pulse-line"
+    }).addTo(map);
+  }
+</script>
+</body>
+</html>
