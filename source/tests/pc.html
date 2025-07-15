@@ -5,27 +5,38 @@
   <title>QBO Pricing Calculator</title>
   <style>
     table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
-    th, td { padding: 0.5em; border: 1px solid #ccc; text-align: left; width: 100%; }
-    select, input { width: auto; }
+    th, td { padding: 0.5em; border: 1px solid #ccc; text-align: left; width: 100%}
+    select, input { width: 60px; }
     tfoot td { font-weight: bold; }
-    .export-btn, .discount-btn {
+    .export-btn, .discount-btn, .gpu-btn {
       padding: 10px 16px;
       border-radius: 5px;
       background: #4783ef;
       color: white;
-      border: 0px;
+      border: 0;
       transition: background 0.2s ease-in-out;
       cursor: pointer;
     }
-    .discount-controls {
+    .article-content table td, .article-content table th {
+      padding: 10px;
+    }
+    #customer_email {
+      width: 300px;
+    }
+    #env_select {
+      width: 200px;
+    }
+    .discount-controls, .gpu-controls {
       display: flex;
       align-items: center;
       gap: 10px;
-      width: 100%;
     }
     .discount-controls span {
       min-width: 40px;
       display: inline-block;
+    }
+    .gpu_model {
+      width: 200px;
     }
   </style>
 </head>
@@ -45,8 +56,8 @@
         <td><input type="email" id="customer_email" placeholder="Enter email"></td>
         <td>
           <select id="env_select" onchange="toggleFields()">
-            <option value="1">QBO Cloud</option>
-            <option value="0.7" selected>Customer On-Prem</option>
+            <option value="1">Cloud</option>
+            <option value="0.7" selected>On-Prem</option>
           </select>
         </td>
         <td>
@@ -74,20 +85,12 @@
     <tbody id="calc-body">
       <tr>
         <td>CPU Core</td>
-        <td><input type="number" value="64" id="cpu_qty" readonly></td>
+        <td><input type="number" value="64" id="cpu_qty"></td>
         <td>0.05</td>
         <td id="cpu_hourly"></td>
         <td id="cpu_units"></td>
       </tr>
-      <tr>
-        <td>GPU 
-          <select id="gpu_model"></select>
-        </td>
-        <td><input type="number" value="1" id="gpu_qty"></td>
-        <td id="gpu_rate"></td>
-        <td id="gpu_hourly"></td>
-        <td id="gpu_units"></td>
-      </tr>
+      <tbody id="gpu-rows"></tbody>
       <tr>
         <td>RAM (GB)</td>
         <td><input type="number" value="0" id="ram_qty"></td>
@@ -119,164 +122,203 @@
   </table>
 
   <table>
-    <thead>
-      <tr>
-        <th>QBO Unit</th>
-        <th>USD</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>1</td>
-        <td>1.00</td>
-      </tr>
-    </tbody>
+    <thead><tr><th>QBO Unit</th><th>USD</th></tr></thead>
+    <tbody><tr><td>1</td><td>1.00</td></tr></tbody>
   </table>
 
   <button class="export-btn" onclick="exportCSV()">Export CSV</button>
 
   <script>
-    const gpuModels = {
-      "GB300": 4.00,
-      "GB200": 3.00,
-      "A2000": 0.45,
-      "A100 80GB": 2.50,
-      "A100 40GB": 2.25,
-      "H100": 3.50,
-      "L40S": 2.00,
-      "L4": 1.25,
-      "RTX A6000": 1.75,
-      "RTX 6000 Ada": 2.25,
-      "RTX A5000": 1.50,
-      "RTX 3090": 1.20,
-      "RTX 3080": 1.00,
-      "RTX 3070": 0.80,
-      "T4": 0.60,
-      "V100 32GB": 1.75,
-      "V100 16GB": 1.50,
-      "P100": 1.00,
-      "P40": 0.75,
-      "A2": 0.40,
-      "K80": 0.20,
-      "Jetson Nano": 0.08,
-      "Jetson TX1": 0.10,
-      "Jetson TX2": 0.12,
-      "Jetson Xavier NX": 0.25,
-      "Jetson AGX Xavier": 0.40,
-      "Jetson Orin NX": 0.60,
-      "Jetson Orin AGX": 0.80
+    const gpuRates = {
+      "GB300": 4.00, "GB200": 3.00, "A2000": 0.45, "A100 80GB": 2.50, "A100 40GB": 2.25,
+      "H100": 3.50, "L40S": 2.00, "L4": 1.25, "RTX A6000": 1.75, "RTX 6000 Ada": 2.25,
+      "RTX A5000": 1.50, "RTX 3090": 1.20, "RTX 3080": 1.00, "RTX 3070": 0.80, "T4": 0.60,
+      "V100 32GB": 1.75, "V100 16GB": 1.50, "P100": 1.00, "P40": 0.75, "A2": 0.40, "K80": 0.20,
+      "Jetson Nano": 0.08, "Jetson TX1": 0.10, "Jetson TX2": 0.12, "Jetson Xavier NX": 0.25,
+      "Jetson AGX Xavier": 0.40, "Jetson Orin NX": 0.60, "Jetson Orin AGX": 0.80
     };
 
     const jetsonCpuCores = {
-      "Jetson Nano": 4,
-      "Jetson TX1": 4,
-      "Jetson TX2": 6,
-      "Jetson Xavier NX": 6,
-      "Jetson AGX Xavier": 8,
-      "Jetson Orin NX": 8,
-      "Jetson Orin AGX": 12
+      "Jetson Nano": 4, "Jetson TX1": 4, "Jetson TX2": 6, "Jetson Xavier NX": 6,
+      "Jetson AGX Xavier": 8, "Jetson Orin NX": 8, "Jetson Orin AGX": 12
     };
 
-    const gpuSelect = document.getElementById('gpu_model');
-    Object.keys(gpuModels).forEach(model => {
-      const option = document.createElement('option');
-      option.value = model;
-      option.textContent = model;
-      gpuSelect.appendChild(option);
-    });
-    gpuSelect.value = "A100 80GB";
-
     function toggleFields() {
-      const isQboCloud = document.getElementById('env_select').value === "1";
-      document.getElementById('ram_qty').disabled = !isQboCloud;
-      document.getElementById('disk_qty').disabled = !isQboCloud;
-      document.getElementById('net_qty').disabled = !isQboCloud;
-    }
-
-    function updateCpuField() {
-      const selectedGpu = gpuSelect.value;
-      const cpuField = document.getElementById('cpu_qty');
-      if (selectedGpu in jetsonCpuCores) {
-        cpuField.value = jetsonCpuCores[selectedGpu];
-        cpuField.readOnly = true;
-      } else {
-        cpuField.readOnly = false;
-      }
-    }
-
-    function calculate() {
-      updateCpuField();
-
-      const hoursPerMonth = 720;
-      const envMultiplier = parseFloat(document.getElementById('env_select').value);
-      const discountPercent = parseFloat(document.getElementById('discount_input').value) || 0;
-      const discountMultiplier = (100 - discountPercent) / 100;
-      const multiplier = envMultiplier * discountMultiplier;
-
-      function compute(qty, rate) {
-        return {
-          hourly: qty * rate * multiplier,
-          monthly: qty * rate * multiplier * hoursPerMonth
-        };
-      }
-
-      const cpu = compute(parseFloat(document.getElementById('cpu_qty').value), 0.05);
-      const gpu = compute(parseFloat(document.getElementById('gpu_qty').value), gpuModels[gpuSelect.value]);
-      const ram = compute(parseFloat(document.getElementById('ram_qty').value), 0.005);
-      const disk = compute(parseFloat(document.getElementById('disk_qty').value), 0.0005);
-      const net = compute(parseFloat(document.getElementById('net_qty').value), 0.25);
-
-      document.getElementById('cpu_hourly').textContent = cpu.hourly.toFixed(4);
-      document.getElementById('cpu_units').textContent = cpu.monthly.toFixed(2);
-
-      document.getElementById('gpu_rate').textContent = (gpuModels[gpuSelect.value] * multiplier).toFixed(2);
-      document.getElementById('gpu_hourly').textContent = gpu.hourly.toFixed(4);
-      document.getElementById('gpu_units').textContent = gpu.monthly.toFixed(2);
-
-      document.getElementById('ram_hourly').textContent = ram.hourly.toFixed(4);
-      document.getElementById('ram_units').textContent = ram.monthly.toFixed(2);
-
-      document.getElementById('disk_hourly').textContent = disk.hourly.toFixed(4);
-      document.getElementById('disk_units').textContent = disk.monthly.toFixed(2);
-
-      document.getElementById('net_hourly').textContent = net.hourly.toFixed(4);
-      document.getElementById('net_units').textContent = net.monthly.toFixed(2);
-
-      const totalMonthly = cpu.monthly + gpu.monthly + ram.monthly + disk.monthly + net.monthly;
-      document.getElementById('total_units').textContent = totalMonthly.toFixed(2);
-      document.getElementById('discount_display').textContent = discountPercent + "%";
+      const isCloud = document.getElementById("env_select").value === "1";
+      ["ram_qty", "disk_qty", "net_qty"].forEach(id => {
+        document.getElementById(id).disabled = !isCloud;
+        if (!isCloud) document.getElementById(id).value = 0;
+      });
+      calculate();
     }
 
     function changeDiscount(delta) {
-      const input = document.getElementById('discount_input');
+      const input = document.getElementById("discount_input");
       let current = parseInt(input.value) || 0;
       current = Math.min(100, Math.max(0, current + delta));
       input.value = current;
+      document.getElementById("discount_display").textContent = current + "%";
       calculate();
+    }
+
+    function addGpuRow(model = "A100 80GB", qty = 1) {
+      const tbody = document.getElementById("gpu-rows");
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td>
+          <div class="gpu-controls">
+            GPU
+            <select class="gpu_model">${Object.keys(gpuRates).map(g => `<option value="${g}" ${g === model ? "selected" : ""}>${g}</option>`).join('')}</select>
+            <button class="gpu-btn gpu-minus">−</button>
+            <button class="gpu-btn gpu-plus">+</button>
+          </div>
+        </td>
+        <td><input type="number" class="gpu_qty" value="${qty}"></td>
+        <td class="gpu_rate"></td>
+        <td class="gpu_hourly"></td>
+        <td class="gpu_units"></td>
+      `;
+
+      tbody.appendChild(row);
+      attachGpuHandlers();
+      updateMinusButtons();
+      calculate();
+    }
+
+    function attachGpuHandlers() {
+      document.querySelectorAll('.gpu_model, .gpu_qty').forEach(el => el.onchange = calculate);
+      document.querySelectorAll('.gpu-plus').forEach(btn => btn.onclick = () => addGpuRow());
+      document.querySelectorAll('.gpu-minus').forEach(btn => btn.onclick = (e) => {
+        if (document.querySelectorAll('.gpu-minus').length > 1) {
+          e.target.closest('tr').remove();
+          calculate();
+        }
+        updateMinusButtons();
+      });
+    }
+
+    function updateMinusButtons() {
+      document.querySelectorAll('.gpu-minus').forEach((btn, i, arr) => {
+        btn.disabled = arr.length <= 1;
+      });
+    }
+
+    function calculate() {
+      const envMultiplier = parseFloat(document.getElementById("env_select").value);
+      const discount = parseFloat(document.getElementById("discount_input").value || 0);
+      const multiplier = envMultiplier * (1 - discount / 100);
+      const hours = 720;
+
+      const cpuField = document.getElementById("cpu_qty");
+      let cpuQty = parseFloat(cpuField.value);
+
+      let gpuTotal = 0;
+      document.querySelectorAll('#gpu-rows tr').forEach(row => {
+        const model = row.querySelector('.gpu_model').value;
+        const qty = parseFloat(row.querySelector('.gpu_qty').value);
+        const rate = gpuRates[model];
+        const rateAdj = rate * multiplier;
+        const hourly = qty * rateAdj;
+        const monthly = hourly * hours;
+
+        row.querySelector('.gpu_rate').textContent = rateAdj.toFixed(2);
+        row.querySelector('.gpu_hourly').textContent = hourly.toFixed(4);
+        row.querySelector('.gpu_units').textContent = monthly.toFixed(2);
+        gpuTotal += monthly;
+
+        if (jetsonCpuCores[model]) {
+          cpuField.value = jetsonCpuCores[model];
+          cpuField.readOnly = true;
+        } else {
+          cpuField.readOnly = false;
+        }
+      });
+
+      const cpuRate = 0.05;
+      const ramRate = 0.005;
+      const diskRate = 0.0005;
+      const netRate = 0.25;
+
+      const cpuMonthly = parseFloat(cpuField.value) * cpuRate * multiplier * hours;
+      const ramMonthly = parseFloat(document.getElementById("ram_qty").value) * ramRate * multiplier * hours;
+      const diskMonthly = parseFloat(document.getElementById("disk_qty").value) * diskRate * multiplier * hours;
+      const netMonthly = parseFloat(document.getElementById("net_qty").value) * netRate * multiplier * hours;
+
+      document.getElementById("cpu_hourly").textContent = (parseFloat(cpuField.value) * cpuRate * multiplier).toFixed(4);
+      document.getElementById("cpu_units").textContent = cpuMonthly.toFixed(2);
+
+      document.getElementById("ram_hourly").textContent = (parseFloat(document.getElementById("ram_qty").value) * ramRate * multiplier).toFixed(4);
+      document.getElementById("ram_units").textContent = ramMonthly.toFixed(2);
+
+      document.getElementById("disk_hourly").textContent = (parseFloat(document.getElementById("disk_qty").value) * diskRate * multiplier).toFixed(4);
+      document.getElementById("disk_units").textContent = diskMonthly.toFixed(2);
+
+      document.getElementById("net_hourly").textContent = (parseFloat(document.getElementById("net_qty").value) * netRate * multiplier).toFixed(4);
+      document.getElementById("net_units").textContent = netMonthly.toFixed(2);
+
+      document.getElementById("total_units").textContent = (cpuMonthly + gpuTotal + ramMonthly + diskMonthly + netMonthly).toFixed(2);
     }
 
     function exportCSV() {
       const email = document.getElementById('customer_email').value || "Unnamed";
       const environment = document.getElementById('env_select').value === "1" ? "QBO Cloud" : "Customer On-Prem";
       const discount = document.getElementById('discount_input').value + "%";
+
       const rows = [
         ["Customer Email", email],
         ["Environment", environment],
-        ["Discount Applied", discount]
+        ["Discount Applied", discount],
+        [],
+        ["Resource Type", "Quantity", "Hourly QBO Unit Rate", "Hourly QBO Units", "Monthly QBO Units"]
       ];
-      const table = document.querySelector("#calc-body");
-      const headers = ["Resource Type", "Quantity", "Hourly QBO Unit Rate", "Hourly QBO Units", "Monthly QBO Units"];
-      rows.push(headers);
-      [...table.rows].forEach(row => {
-        const cells = [...row.cells].map(cell => cell.innerText || cell.querySelector('input, select')?.value || '');
-        rows.push(cells);
+
+      // CPU row
+      const cpuQty = document.getElementById("cpu_qty").value;
+      const cpuRate = 0.05;
+      const cpuHourly = document.getElementById("cpu_hourly").textContent;
+      const cpuMonthly = document.getElementById("cpu_units").textContent;
+      rows.push(["CPU Core", cpuQty, cpuRate, cpuHourly, cpuMonthly]);
+
+      // GPU rows
+      document.querySelectorAll('#gpu-rows tr').forEach(row => {
+        const model = row.querySelector('.gpu_model').value;
+        const qty = row.querySelector('.gpu_qty').value;
+        const rate = row.querySelector('.gpu_rate').textContent;
+        const hourly = row.querySelector('.gpu_hourly').textContent;
+        const monthly = row.querySelector('.gpu_units').textContent;
+        rows.push([model, qty, rate, hourly, monthly]);
       });
-      const total = document.getElementById('total_units').textContent;
+
+      // RAM
+      const ramQty = document.getElementById("ram_qty").value;
+      const ramRate = 0.005;
+      const ramHourly = document.getElementById("ram_hourly").textContent;
+      const ramMonthly = document.getElementById("ram_units").textContent;
+      rows.push(["RAM (GB)", ramQty, ramRate, ramHourly, ramMonthly]);
+
+      // Disk
+      const diskQty = document.getElementById("disk_qty").value;
+      const diskRate = 0.0005;
+      const diskHourly = document.getElementById("disk_hourly").textContent;
+      const diskMonthly = document.getElementById("disk_units").textContent;
+      rows.push(["Disk (GB)", diskQty, diskRate, diskHourly, diskMonthly]);
+
+      // Network
+      const netQty = document.getElementById("net_qty").value;
+      const netRate = 0.25;
+      const netHourly = document.getElementById("net_hourly").textContent;
+      const netMonthly = document.getElementById("net_units").textContent;
+      rows.push(["Network (TB)", netQty, netRate, netHourly, netMonthly]);
+
+      // Total
+      const total = document.getElementById("total_units").textContent;
       rows.push(["Total", "", "", "", total]);
 
-      const csvContent = rows.map(r => r.join(",")).join("\n");
+      const csvContent = rows.map(row => row.join(",")).join("\n");
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
+
       const link = document.createElement("a");
       link.setAttribute("href", url);
       link.setAttribute("download", `${email.replace(/\s+/g, '_')}_QBO_Pricing.csv`);
@@ -285,7 +327,9 @@
       document.body.removeChild(link);
     }
 
-    document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', calculate));
+
+
+    addGpuRow();
     toggleFields();
     calculate();
   </script>
