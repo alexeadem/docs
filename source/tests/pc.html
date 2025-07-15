@@ -44,9 +44,9 @@
       <tr>
         <td><input type="email" id="customer_email" placeholder="Enter email"></td>
         <td>
-          <select id="env_select">
+          <select id="env_select" onchange="toggleFields()">
             <option value="1">QBO Cloud</option>
-            <option value="0.7">Customer On-Prem</option>
+            <option value="0.7" selected>Customer On-Prem</option>
           </select>
         </td>
         <td>
@@ -74,7 +74,7 @@
     <tbody id="calc-body">
       <tr>
         <td>CPU Core</td>
-        <td><input type="number" value="64" id="cpu_qty"></td>
+        <td><input type="number" value="64" id="cpu_qty" readonly></td>
         <td>0.05</td>
         <td id="cpu_hourly"></td>
         <td id="cpu_units"></td>
@@ -90,21 +90,21 @@
       </tr>
       <tr>
         <td>RAM (GB)</td>
-        <td><input type="number" value="256" id="ram_qty"></td>
+        <td><input type="number" value="0" id="ram_qty"></td>
         <td>0.005</td>
         <td id="ram_hourly"></td>
         <td id="ram_units"></td>
       </tr>
       <tr>
         <td>Disk (GB)</td>
-        <td><input type="number" value="1000" id="disk_qty"></td>
+        <td><input type="number" value="0" id="disk_qty"></td>
         <td>0.0005</td>
         <td id="disk_hourly"></td>
         <td id="disk_units"></td>
       </tr>
       <tr>
         <td>Network (TB)</td>
-        <td><input type="number" value="10" id="net_qty"></td>
+        <td><input type="number" value="0" id="net_qty"></td>
         <td>0.25</td>
         <td id="net_hourly"></td>
         <td id="net_units"></td>
@@ -137,6 +137,9 @@
 
   <script>
     const gpuModels = {
+      "GB300": 4.00,
+      "GB200": 3.00,
+      "A2000": 0.45,
       "A100 80GB": 2.50,
       "A100 40GB": 2.25,
       "H100": 3.50,
@@ -164,6 +167,16 @@
       "Jetson Orin AGX": 0.80
     };
 
+    const jetsonCpuCores = {
+      "Jetson Nano": 4,
+      "Jetson TX1": 4,
+      "Jetson TX2": 6,
+      "Jetson Xavier NX": 6,
+      "Jetson AGX Xavier": 8,
+      "Jetson Orin NX": 8,
+      "Jetson Orin AGX": 12
+    };
+
     const gpuSelect = document.getElementById('gpu_model');
     Object.keys(gpuModels).forEach(model => {
       const option = document.createElement('option');
@@ -173,7 +186,27 @@
     });
     gpuSelect.value = "A100 80GB";
 
+    function toggleFields() {
+      const isQboCloud = document.getElementById('env_select').value === "1";
+      document.getElementById('ram_qty').disabled = !isQboCloud;
+      document.getElementById('disk_qty').disabled = !isQboCloud;
+      document.getElementById('net_qty').disabled = !isQboCloud;
+    }
+
+    function updateCpuField() {
+      const selectedGpu = gpuSelect.value;
+      const cpuField = document.getElementById('cpu_qty');
+      if (selectedGpu in jetsonCpuCores) {
+        cpuField.value = jetsonCpuCores[selectedGpu];
+        cpuField.readOnly = true;
+      } else {
+        cpuField.readOnly = false;
+      }
+    }
+
     function calculate() {
+      updateCpuField();
+
       const hoursPerMonth = 720;
       const envMultiplier = parseFloat(document.getElementById('env_select').value);
       const discountPercent = parseFloat(document.getElementById('discount_input').value) || 0;
@@ -191,7 +224,7 @@
       const gpu = compute(parseFloat(document.getElementById('gpu_qty').value), gpuModels[gpuSelect.value]);
       const ram = compute(parseFloat(document.getElementById('ram_qty').value), 0.005);
       const disk = compute(parseFloat(document.getElementById('disk_qty').value), 0.0005);
-      const net = compute(parseFloat(document.getElementById('net_qty').value), 0.25); // hourly rate not multiplied by 720
+      const net = compute(parseFloat(document.getElementById('net_qty').value), 0.25);
 
       document.getElementById('cpu_hourly').textContent = cpu.hourly.toFixed(4);
       document.getElementById('cpu_units').textContent = cpu.monthly.toFixed(2);
@@ -253,6 +286,7 @@
     }
 
     document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', calculate));
+    toggleFields();
     calculate();
   </script>
 </body>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Competitive GPU Pricing Comparison</title>
+  <style>
+    table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
+    th, td { padding: 0.5em; border: 1px solid #ccc; text-align: left; width: 100%; }
+    select, input { width: auto; }
+    tfoot td { font-weight: bold; }
+    .export-btn, .discount-btn {
+      padding: 10px 16px;
+      border-radius: 5px;
+      background: #4783ef;
+      color: white;
+      border: 0px;
+      transition: background 0.2s ease-in-out;
+      cursor: pointer;
+    }
+    .discount-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+    .discount-controls span {
+      min-width: 40px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <h2>Competitive GPU Pricing Comparison</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>GPU Model</th>
+        <th>QBO Cloud</th>
+        <th>RunPod</th>
+        <th>Lambda Labs</th>
+        <th>CoreWeave</th>
+        <th>AWS (p4d/p5)</th>
+        <th>Nebius</th>
+        <th>Civo</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>A100 80GB</td><td>$2.50</td><td>~$2.20</td><td>~$2.40</td><td>~$2.60</td><td>~$3.05–$4.10</td><td>N/A</td><td>$1.79 / $1.39</td></tr>
+      <tr><td>A100 40GB</td><td>$2.25</td><td>N/A</td><td>N/A</td><td>$1.09</td><td>$1.79</td><td>N/A</td><td>$0.69</td></tr>
+      <tr><td>H100</td><td>$3.50</td><td>~$3.60</td><td>~$3.80</td><td>~$3.75–$4.00</td><td>~$4.80–$5.20</td><td>$2.95 / $2.00</td><td>$2.99 / $1.99</td></tr>
+      <tr><td>H200</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>~$5.20</td><td>$3.50</td><td>$3.49</td></tr>
+      <tr><td>GB200</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>Request</td><td>N/A</td></tr>
+      <tr><td>GB300</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>Preorder</td><td>N/A</td></tr>
+      <tr><td>L40S</td><td>$2.00</td><td>~$1.20</td><td>~$1.30</td><td>~$1.25</td><td>N/A</td><td>$1.55+</td><td>$0.89</td></tr>
+      <tr><td>RTX A5000</td><td>$1.50</td><td>~$1.30</td><td>~$1.40</td><td>~$1.45</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+      <tr><td>RTX A6000</td><td>$1.75</td><td>N/A</td><td>~$1.60</td><td>N/A</td><td>N/A</td><td>N/A</td><td>$0.54</td></tr>
+      <tr><td>RTX 6000 Ada</td><td>$2.25</td><td>N/A</td><td>$0.97</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+      <tr><td>RTX 3090</td><td>$1.20</td><td>$0.12</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+      <tr><td>RTX 3080</td><td>$1.00</td><td>$1.08</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+      <tr><td>RTX 3070</td><td>$0.80</td><td>$1.15</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+      <tr><td>T4</td><td>$0.60</td><td>~$0.50</td><td>~$0.55</td><td>~$0.60</td><td>~$0.72</td><td>N/A</td><td>$0.53</td></tr>
+      <tr><td>V100 16/32GB</td><td>$1.50–$1.75</td><td>~$1.30</td><td>~$1.50</td><td>~$1.60</td><td>~$2.20–$2.80</td><td>N/A</td><td>$0.39</td></tr>
+      <tr><td>A2</td><td>$0.40</td><td>~$0.35</td><td>~$0.38</td><td>~$0.40</td><td>~$0.45</td><td>N/A</td><td>N/A</td></tr>
+    </tbody>
+  </table>
+</body>
+</html>
+
