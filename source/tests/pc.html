@@ -85,7 +85,7 @@
     <tbody id="calc-body">
       <tr>
         <td>CPU Core</td>
-        <td><input type="number" value="64" id="cpu_qty"></td>
+        <td><input type="number" value="1" id="cpu_qty" min="0"></td>
         <td>0.05</td>
         <td id="cpu_hourly"></td>
         <td id="cpu_units"></td>
@@ -93,37 +93,50 @@
       <tbody id="gpu-rows"></tbody>
       <tr>
         <td>RAM (GB)</td>
-        <td><input type="number" value="0" id="ram_qty"></td>
+        <td><input type="number" value="0" id="ram_qty" min="0"></td>
         <td>0.005</td>
         <td id="ram_hourly"></td>
         <td id="ram_units"></td>
       </tr>
       <tr>
         <td>Disk (GB)</td>
-        <td><input type="number" value="0" id="disk_qty"></td>
+        <td><input type="number" value="0" id="disk_qty" min="0"></td>
         <td>0.0005</td>
         <td id="disk_hourly"></td>
         <td id="disk_units"></td>
       </tr>
       <tr>
         <td>Network (TB)</td>
-        <td><input type="number" value="0" id="net_qty"></td>
+        <td><input type="number" value="0" id="net_qty" min="0"></td>
         <td>0.25</td>
         <td id="net_hourly"></td>
         <td id="net_units"></td>
       </tr>
-    </  >
+    </tbody>
     <tfoot>
       <tr>
         <td colspan="4">Total</td>
         <td id="total_units"></td>
+        <!-- <p id="min-spend-warning" style="color: red; font-weight: bold;"></p> -->
       </tr>
     </tfoot>
   </table>
 
   <table>
-    <thead><tr><th>QBO Unit</th><th>USD</th></tr></thead>
-    <tbody><tr><td>1</td><td>1.00</td></tr></tbody>
+    <thead>
+      <tr>
+        <th>QBO Unit</th>
+        <th>USD (per Unit)</th>
+        <th>Total (USD)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td id="usd_per_unit">1.00</td>
+        <td id="total_usd">0.00</td>
+      </tr>
+    </tbody>
   </table>
 
   <button class="export-btn" onclick="exportCSV()">Export CSV</button>
@@ -161,7 +174,7 @@
       calculate();
     }
 
-    function addGpuRow(model = "A100 80GB", qty = 1) {
+    function addGpuRow(model = "A100 80GB", qty = 0) {
       const tbody = document.getElementById("gpu-rows");
       const row = document.createElement("tr");
 
@@ -174,7 +187,7 @@
             <button class="gpu-btn gpu-plus">+</button>
           </div>
         </td>
-        <td><input type="number" class="gpu_qty" value="${qty}"></td>
+        <td><input type="number" class="gpu_qty" value="${qty}" min="0"></td>
         <td class="gpu_rate"></td>
         <td class="gpu_hourly"></td>
         <td class="gpu_units"></td>
@@ -205,60 +218,106 @@
     }
 
     function calculate() {
-      const envMultiplier = parseFloat(document.getElementById("env_select").value);
-      const discount = parseFloat(document.getElementById("discount_input").value || 0);
-      const multiplier = envMultiplier * (1 - discount / 100);
-      const hours = 720;
+  const envMultiplier = parseFloat(document.getElementById("env_select").value);
+  const discount = parseFloat(document.getElementById("discount_input").value || 0);
+  const multiplier = envMultiplier; // for QBO Unit computation only
+  const usdDiscountFactor = 1 - discount / 100; // for USD conversion only
+  const hours = 720;
 
-      const cpuField = document.getElementById("cpu_qty");
-      let cpuQty = parseFloat(cpuField.value);
+  const cpuField = document.getElementById("cpu_qty");
+  let cpuQty = parseFloat(cpuField.value);
+  let gpuTotal = 0;
+  let cpuOverridden = false;
 
-      let gpuTotal = 0;
-      document.querySelectorAll('#gpu-rows tr').forEach(row => {
-        const model = row.querySelector('.gpu_model').value;
-        const qty = parseFloat(row.querySelector('.gpu_qty').value);
-        const rate = gpuRates[model];
-        const rateAdj = rate * multiplier;
-        const hourly = qty * rateAdj;
-        const monthly = hourly * hours;
+  document.querySelectorAll('#gpu-rows tr').forEach(row => {
+    const model = row.querySelector('.gpu_model').value;
+    const qty = parseFloat(row.querySelector('.gpu_qty').value);
+    const rate = gpuRates[model];
+    const rateAdj = rate * multiplier;
+    const hourly = qty * rateAdj;
+    const monthly = hourly * hours;
 
-        row.querySelector('.gpu_rate').textContent = rateAdj.toFixed(2);
-        row.querySelector('.gpu_hourly').textContent = hourly.toFixed(4);
-        row.querySelector('.gpu_units').textContent = monthly.toFixed(2);
-        gpuTotal += monthly;
+    row.querySelector('.gpu_rate').textContent = rateAdj.toFixed(2);
+    row.querySelector('.gpu_hourly').textContent = hourly.toFixed(4);
+    row.querySelector('.gpu_units').textContent = monthly.toFixed(2);
+    gpuTotal += monthly;
 
-        if (jetsonCpuCores[model]) {
-          cpuField.value = jetsonCpuCores[model];
-          cpuField.readOnly = true;
-        } else {
-          cpuField.readOnly = false;
-        }
-      });
-
-      const cpuRate = 0.05;
-      const ramRate = 0.005;
-      const diskRate = 0.0005;
-      const netRate = 0.25;
-
-      const cpuMonthly = parseFloat(cpuField.value) * cpuRate * multiplier * hours;
-      const ramMonthly = parseFloat(document.getElementById("ram_qty").value) * ramRate * multiplier * hours;
-      const diskMonthly = parseFloat(document.getElementById("disk_qty").value) * diskRate * multiplier * hours;
-      const netMonthly = parseFloat(document.getElementById("net_qty").value) * netRate * multiplier * hours;
-
-      document.getElementById("cpu_hourly").textContent = (parseFloat(cpuField.value) * cpuRate * multiplier).toFixed(4);
-      document.getElementById("cpu_units").textContent = cpuMonthly.toFixed(2);
-
-      document.getElementById("ram_hourly").textContent = (parseFloat(document.getElementById("ram_qty").value) * ramRate * multiplier).toFixed(4);
-      document.getElementById("ram_units").textContent = ramMonthly.toFixed(2);
-
-      document.getElementById("disk_hourly").textContent = (parseFloat(document.getElementById("disk_qty").value) * diskRate * multiplier).toFixed(4);
-      document.getElementById("disk_units").textContent = diskMonthly.toFixed(2);
-
-      document.getElementById("net_hourly").textContent = (parseFloat(document.getElementById("net_qty").value) * netRate * multiplier).toFixed(4);
-      document.getElementById("net_units").textContent = netMonthly.toFixed(2);
-
-      document.getElementById("total_units").textContent = (cpuMonthly + gpuTotal + ramMonthly + diskMonthly + netMonthly).toFixed(2);
+    if (jetsonCpuCores[model]) {
+      cpuQty = jetsonCpuCores[model];
+      cpuField.value = cpuQty;
+      cpuField.readOnly = true;
+      cpuOverridden = true;
     }
+  });
+
+  if (!cpuOverridden) {
+    cpuField.readOnly = false;
+  }
+
+  const cpuRate = 0.05;
+  const ramRate = 0.005;
+  const diskRate = 0.0005;
+  const netRate = 0.25;
+
+  const ramQty = parseFloat(document.getElementById("ram_qty").value);
+  const diskQty = parseFloat(document.getElementById("disk_qty").value);
+  const netQty = parseFloat(document.getElementById("net_qty").value);
+
+  const cpuMonthly = cpuQty * cpuRate * multiplier * hours;
+  const ramMonthly = ramQty * ramRate * multiplier * hours;
+  const diskMonthly = diskQty * diskRate * multiplier * hours;
+  const netMonthly = netQty * netRate * multiplier * hours;
+
+  const totalUnits = cpuMonthly + gpuTotal + ramMonthly + diskMonthly + netMonthly;
+  const totalUSD = totalUnits * usdDiscountFactor;
+
+  document.getElementById("cpu_hourly").textContent = (cpuQty * cpuRate * multiplier).toFixed(4);
+  document.getElementById("cpu_units").textContent = cpuMonthly.toFixed(2);
+
+  document.getElementById("ram_hourly").textContent = (ramQty * ramRate * multiplier).toFixed(4);
+  document.getElementById("ram_units").textContent = ramMonthly.toFixed(2);
+
+  document.getElementById("disk_hourly").textContent = (diskQty * diskRate * multiplier).toFixed(4);
+  document.getElementById("disk_units").textContent = diskMonthly.toFixed(2);
+
+  document.getElementById("net_hourly").textContent = (netQty * netRate * multiplier).toFixed(4);
+  document.getElementById("net_units").textContent = netMonthly.toFixed(2);
+
+  // Update total QBO Units
+  const totalCell = document.getElementById("total_units");
+  totalCell.textContent = totalUnits.toFixed(2);
+
+  // Update label cell (left of total) with minimum spend warning
+  const row = totalCell.closest("tr");
+  const minSpend = 50000;
+
+  if (row) {
+    const labelCell = row.cells[row.cells.length - 2];
+    if (envMultiplier === 0.7 && totalUnits < minSpend) {
+      const remaining = (minSpend - totalUnits).toFixed(2);
+      labelCell.innerHTML = `
+        <div>
+          <strong>Total</strong>
+          <span style="color: red; font-size: 0.75em; margin-left: 0.5em;">
+            (${totalUnits.toFixed(2)} / 50,000 QBO Units — ${remaining} left)
+          </span>
+        </div>
+      `;
+    } else {
+      labelCell.innerHTML = `<strong>Total</strong>`;
+    }
+  }
+
+  // ✅ Update USD conversion display table
+  document.getElementById("usd_per_unit").textContent = usdDiscountFactor.toFixed(2);
+  document.getElementById("total_usd").textContent = totalUSD.toFixed(2);
+}
+
+
+
+
+
+
 
     function exportCSV() {
       const email = document.getElementById('customer_email').value || "Unnamed";
@@ -312,8 +371,17 @@
       rows.push(["Network (TB)", netQty, netRate, netHourly, netMonthly]);
 
       // Total
-      const total = document.getElementById("total_units").textContent;
-      rows.push(["Total", "", "", "", total]);
+      // Total with minimum spend note if On-Prem
+      const total = parseFloat(document.getElementById("total_units").textContent);
+      const isOnPrem = document.getElementById("env_select").value === "0.7";
+      const minSpend = 50000;
+
+      if (isOnPrem && total < minSpend) {
+        const remaining = (minSpend - total).toFixed(2);
+        rows.push([`Total (${total.toFixed(2)} / ${minSpend} QBO Units)`, "", "", "", `${remaining} Units to reach minimum`]);
+      } else {
+        rows.push(["Total", "", "", "", total.toFixed(2)]);
+      }
 
       const csvContent = rows.map(row => row.join(",")).join("\n");
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -332,6 +400,78 @@
     addGpuRow();
     toggleFields();
     calculate();
+    document.getElementById("cpu_qty").addEventListener("input", calculate);
   </script>
+  <div style="margin-top: 2em; padding: 1em; color: #555; font-size: 0.9em;">
+    <h3 style="margin-top: 0;">What Are QBO Units?</h3>
+    <p>
+      <strong>QBO Units</strong> are a universal pricing unit used by QBO to represent consumption of compute resources
+      such as CPU, GPU, RAM, disk, and network. Each QBO Unit is pegged to <strong>1.00 USD</strong> as a baseline
+      for pricing transparency and simplicity.
+    </p>
+    <p>
+      Think of QBO Units as a <strong>“currency of compute”</strong> — allowing any resource or environment
+      (Cloud or On-Prem) to be priced, billed, and compared using the same unit. This abstraction enables consistent,
+      environment-agnostic cost modeling and lays the groundwork for future blockchain integration or usage-based billing tokens.
+    </p>
+  
+    <h3>Step-by-Step Instructions</h3>
+    <ol>
+      <li><strong>Customer Inputs</strong><br>
+        <ul>
+          <li><strong>Email:</strong> Enter customer’s email.</li>
+          <li><strong>Environment:</strong> Choose between Cloud (1.0x) or On-Prem (0.7x). This multiplier affects QBO Unit rates based on deployment location.</li>
+          <li><strong>Discount:</strong> Use the −/+ buttons to apply a discount (e.g. 10%, 30%, etc).<br>
+            <em>Note:</em> This discount <strong>only affects the final USD total</strong>. The QBO Unit rates and quantities remain unchanged.
+            This ensures consistent compute accounting, while letting you apply commercial incentives or special pricing per customer.
+          </li>
+        </ul>
+      </li>
+      <li><strong>Resource Configuration</strong><br>
+        <ul>
+          <li><strong>CPU Cores:</strong> Input number of cores.</li>
+          <li><strong>GPU Models:</strong>
+            <ul>
+              <li>Select GPU model.</li>
+              <li>Adjust quantity.</li>
+              <li>Click “+” to add another GPU type.</li>
+              <li>Jetson models will override CPU cores automatically.</li>
+            </ul>
+          </li>
+          <li><strong>RAM / Disk / Network:</strong>
+            <ul>
+              <li>Only enabled for Cloud.</li>
+              <li>Values reset to 0 for On-Prem.</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li><strong>Pricing Display</strong><br>
+        <ul>
+          <li><strong>QBO Unit Rate:</strong> Shown for each resource, adjusted by the environment multiplier.</li>
+          <li><strong>Hourly/Monthly Units:</strong> Based on 720 hours per month.</li>
+          <li><strong>USD Table:</strong> Shows:
+            <ul>
+              <li>1 QBO Unit = $1.00 base (adjusted by discount for final USD)</li>
+              <li>Total price in USD after discount is applied to the QBO Unit total</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li><strong>Minimum Spend Warning</strong><br>
+        <ul>
+          <li>For On-Prem, a red warning appears next to the “Total” row if usage is under 50,000 QBO Units.</li>
+        </ul>
+      </li>
+      <li><strong>Export CSV</strong><br>
+        <ul>
+          <li>Click <strong>Export CSV</strong> to download a quote summary file for the customer.</li>
+        </ul>
+      </li>
+    </ol>
+  </div>
+  
+  
+  
 </body>
 </html>
