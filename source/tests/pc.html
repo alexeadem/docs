@@ -86,7 +86,7 @@
       <tr>
         <td>CPU Core</td>
         <td><input type="number" value="1" id="cpu_qty" min="0"></td>
-        <td>0.05</td>
+        <td id="cpu_rate"></td>
         <td id="cpu_hourly"></td>
         <td id="cpu_units"></td>
       </tr>
@@ -94,21 +94,21 @@
       <tr>
         <td>RAM (GB)</td>
         <td><input type="number" value="0" id="ram_qty" min="0"></td>
-        <td>0.005</td>
+        <td id="ram_rate"></td>
         <td id="ram_hourly"></td>
         <td id="ram_units"></td>
       </tr>
       <tr>
         <td>Disk (GB)</td>
         <td><input type="number" value="0" id="disk_qty" min="0"></td>
-        <td>0.0005</td>
+        <td id="disk_rate"></td>
         <td id="disk_hourly"></td>
         <td id="disk_units"></td>
       </tr>
       <tr>
         <td>Network (TB)</td>
         <td><input type="number" value="0" id="net_qty" min="0"></td>
-        <td>0.25</td>
+        <td id="net_rate"></td>
         <td id="net_hourly"></td>
         <td id="net_units"></td>
       </tr>
@@ -147,6 +147,13 @@
     const ramRate = 0.005;
     const diskRate = 0.0005;
     const netRate = 0.25;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("cpu_rate").textContent = cpuRate.toFixed(3);
+      document.getElementById("ram_rate").textContent = ramRate.toFixed(3);
+      document.getElementById("disk_rate").textContent = diskRate.toFixed(4);
+      document.getElementById("net_rate").textContent = netRate.toFixed(2);
+    });
 
 
     const gpuRates = {
@@ -304,11 +311,12 @@
       // Update label cell (left of total) with minimum spend warning
       const row = totalCell.closest("tr");
       const minSpend = 50000;
+      const minMonthlySpend = minSpend / 12;
 
       if (row) {
         const labelCell = row.cells[row.cells.length - 2];
-        if (envMultiplier === 0.7 && totalUnits < minSpend) {
-          const remaining = (minSpend - totalUnits).toFixed(2);
+        if (envMultiplier === 0.7 && totalUnits < minMonthlySpend) {
+          const remaining = (minMonthlySpend - totalUnits).toFixed(2);
           labelCell.innerHTML = `
             <div>
               <strong>Total</strong>
