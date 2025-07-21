@@ -241,7 +241,7 @@
     function calculate() {
       const envMultiplier = parseFloat(document.getElementById("env_select").value);
       const discount = parseFloat(document.getElementById("discount_input").value || 0);
-      const multiplier = envMultiplier; // for QBO Unit computation only
+      const multiplier = envMultiplier;             // for QBO Unit computation only
       const usdDiscountFactor = 1 - discount / 100; // for USD conversion only
       const hours = 720;
 
@@ -337,14 +337,21 @@
 
 
   function exportCSV() {
-    const email = document.getElementById('customer_email').value || "Unnamed";
-    const envValue = parseFloat(document.getElementById('env_select').value);
+    const email = document.getElementById('customer_email')?.value || "Unnamed";
+    const envValue = parseFloat(document.getElementById('env_select')?.value) || 0;
     const environment = envValue === 1 ? "QBO Cloud" : "Customer On-Prem";
-    const discountInput = parseFloat(document.getElementById('discount_input').value || 0);
+    const discountInput = parseFloat(document.getElementById('discount_input')?.value || 0);
     const discount = discountInput + "%";
     const usdDiscountFactor = 1 - discountInput / 100;
 
+    // Generate local date and quote number
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
+    const quoteId = `QBO-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 9000 + 1000)}`;
+
     const rows = [
+      ["Quote Date", dateStr],
+      ["Quote Number", quoteId],
       ["Customer Email", email],
       ["Environment", environment],
       ["Discount Applied", discount],
@@ -353,58 +360,69 @@
     ];
 
     // CPU
-    const cpuQty = document.getElementById("cpu_qty").value;
-    const cpuHourly = document.getElementById("cpu_hourly").textContent;
-    const cpuMonthly = parseFloat(document.getElementById("cpu_units").textContent);
+    const cpuQty = document.getElementById("cpu_qty")?.value || 0;
+    const cpuHourly = document.getElementById("cpu_hourly")?.textContent || "0";
+    const cpuMonthly = parseFloat(document.getElementById("cpu_units")?.textContent || 0);
     rows.push(["CPU Core", cpuQty, cpuRate, cpuHourly, cpuMonthly.toFixed(2)]);
 
     // GPU
     let gpuTotal = 0;
     document.querySelectorAll('#gpu-rows tr').forEach(row => {
-      const model = row.querySelector('.gpu_model').value;
-      const qty = row.querySelector('.gpu_qty').value;
-      const rate = row.querySelector('.gpu_rate').textContent;
-      const hourly = row.querySelector('.gpu_hourly').textContent;
-      const monthly = parseFloat(row.querySelector('.gpu_units').textContent);
+      const model = row.querySelector('.gpu_model')?.value || "Unknown GPU";
+      const qty = row.querySelector('.gpu_qty')?.value || "0";
+      const rate = row.querySelector('.gpu_rate')?.textContent || "0";
+      const hourly = row.querySelector('.gpu_hourly')?.textContent || "0";
+      const monthly = parseFloat(row.querySelector('.gpu_units')?.textContent || 0);
       gpuTotal += monthly;
       rows.push([model, qty, rate, hourly, monthly.toFixed(2)]);
     });
 
     // RAM
-    const ramQty = document.getElementById("ram_qty").value;
-    const ramHourly = document.getElementById("ram_hourly").textContent;
-    const ramMonthly = parseFloat(document.getElementById("ram_units").textContent);
+    const ramQty = document.getElementById("ram_qty")?.value || 0;
+    const ramHourly = document.getElementById("ram_hourly")?.textContent || "0";
+    const ramMonthly = parseFloat(document.getElementById("ram_units")?.textContent || 0);
     rows.push(["RAM (GB)", ramQty, ramRate, ramHourly, ramMonthly.toFixed(2)]);
 
     // Disk
-    const diskQty = document.getElementById("disk_qty").value;
-    const diskHourly = document.getElementById("disk_hourly").textContent;
-    const diskMonthly = parseFloat(document.getElementById("disk_units").textContent);
+    const diskQty = document.getElementById("disk_qty")?.value || 0;
+    const diskHourly = document.getElementById("disk_hourly")?.textContent || "0";
+    const diskMonthly = parseFloat(document.getElementById("disk_units")?.textContent || 0);
     rows.push(["Disk (GB)", diskQty, diskRate, diskHourly, diskMonthly.toFixed(2)]);
 
     // Network
-    const netQty = document.getElementById("net_qty").value;
-    const netHourly = document.getElementById("net_hourly").textContent;
-    const netMonthly = parseFloat(document.getElementById("net_units").textContent);
+    const netQty = document.getElementById("net_qty")?.value || 0;
+    const netHourly = document.getElementById("net_hourly")?.textContent || "0";
+    const netMonthly = parseFloat(document.getElementById("net_units")?.textContent || 0);
     rows.push(["Network (TB)", netQty, netRate, netHourly, netMonthly.toFixed(2)]);
 
-    // Total QBO Units
+    // Totals
     const totalUnits = cpuMonthly + gpuTotal + ramMonthly + diskMonthly + netMonthly;
     const totalUSD = totalUnits * usdDiscountFactor;
     const isOnPrem = envValue === 0.7;
     const minSpend = 50000;
 
     rows.push([]);
+    const minMonthlySpend = minSpend / 12;
 
-    if (isOnPrem && totalUnits < minSpend) {
-      const remaining = (minSpend - totalUnits).toFixed(2);
-      rows.push([`Total QBO Units (${totalUnits.toFixed(2)} / ${minSpend})`, "", "", "", `${remaining} Units to reach minimum`]);
-    } else {
-      rows.push(["Total QBO Units", "", "", "", totalUnits.toFixed(2)]);
-    }
+    // if (isOnPrem && totalUnits < minMonthlySpend) {
+    //   const remaining = (minMonthlySpend - totalUnits).toFixed(2);
+    //   rows.push([`Total QBO Units (${totalUnits.toFixed(2)} / ${minMonthlySpend})`, "", "", "", `${remaining} Units to reach minimum`]);
+    // } else {
+    rows.push(["Total QBO Units (QU)", "", "", "", totalUnits.toFixed(2)]);
+    // }
 
     rows.push(["Total (USD)", "", "", "", totalUSD.toFixed(2)]);
 
+    // Pricing Summary
+    rows.push([]);
+    rows.push(["Pricing Summary"]);
+    rows.push(["SKU", "QU"]);
+    rows.push(["List Price", totalUnits.toFixed(2)]);
+    rows.push(["Discount (%)", discount]);
+    rows.push(["Net Price (USD / month)", "$" + totalUSD.toFixed(2)]);
+    rows.push(["Annual Price (USD)", "$" + (totalUSD * 12).toFixed(2)]);
+
+    // Create CSV
     const csvContent = rows.map(row => row.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -416,6 +434,8 @@
     link.click();
     document.body.removeChild(link);
   }
+
+
 
 
 
