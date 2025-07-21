@@ -242,19 +242,20 @@
     row.querySelector('.gpu_units').textContent = monthly.toFixed(2);
     gpuTotal += monthly;
 
-    if (jetsonCpuCores[model]) {
+    if (jetsonCpuCores[model] && qty > 0) {
       cpuQty = jetsonCpuCores[model];
       cpuField.value = cpuQty;
       cpuField.readOnly = true;
       cpuOverridden = true;
     }
+
   });
 
   if (!cpuOverridden) {
     cpuField.readOnly = false;
   }
 
-  const cpuRate = 0.05;
+  const cpuRate = 0.025;
   const ramRate = 0.005;
   const diskRate = 0.0005;
   const netRate = 0.25;
@@ -419,59 +420,58 @@
     <ol>
       <li><strong>Customer Inputs</strong><br>
         <ul>
-          <li><strong>Email:</strong> Enter customer’s email.</li>
-          <li><strong>Environment:</strong> Choose between Cloud (1.0x) or On-Prem (0.7x). This multiplier affects QBO Unit rates based on deployment location.</li>
-          <li><strong>Discount:</strong> Use the −/+ buttons to apply a discount (e.g. 10%, 30%, etc).<br>
-            <em>Note:</em> This discount <strong>only affects the final USD total</strong>. The QBO Unit rates and quantities remain unchanged.
-            This ensures consistent compute accounting, while letting you apply commercial incentives or special pricing per customer.
+          <li><strong>Email:</strong> Enter the customer’s email address.</li>
+          <li><strong>Environment:</strong> Choose between Cloud (1.0x) or On-Prem (0.7x). This multiplier adjusts QBO Unit rates based on where the workload is deployed.</li>
+          <li><strong>Discount:</strong> Use the −/+ buttons to apply a percentage discount.<br>
+            <em>Note:</em> This discount <strong>only affects the final USD total</strong>. The QBO Unit rates and quantities remain fixed.
+            This allows sales teams to apply incentives or special pricing without changing the underlying compute valuation.
           </li>
         </ul>
       </li>
       <li><strong>Resource Configuration</strong><br>
         <ul>
-          <li><strong>CPU Cores:</strong> Input number of cores.</li>
+          <li><strong>CPU Cores:</strong> Enter the desired number of CPU cores.</li>
           <li><strong>GPU Models:</strong>
             <ul>
-              <li>Select GPU model.</li>
-              <li>Adjust quantity.</li>
+              <li>Select a GPU model from the dropdown.</li>
+              <li>Adjust the quantity.</li>
               <li>Click “+” to add another GPU type.</li>
-              <li>Jetson models will override CPU cores automatically.</li>
+              <li>If a Jetson model is selected, the CPU field will auto-populate with the corresponding number of cores and become read-only.</li>
             </ul>
           </li>
           <li><strong>RAM / Disk / Network:</strong>
             <ul>
-              <li>Only enabled for Cloud.</li>
-              <li>Values reset to 0 for On-Prem.</li>
+              <li>These inputs are <strong>only enabled for Cloud</strong> environments.</li>
+              <li>When On-Prem is selected, RAM, Disk, and Network values are <strong>automatically reset to 0 and disabled</strong>. These fields are not currently considered in On-Prem pricing.</li>
             </ul>
           </li>
         </ul>
       </li>
       <li><strong>Pricing Display</strong><br>
         <ul>
-          <li><strong>QBO Unit Rate:</strong> Shown for each resource, adjusted by the environment multiplier.</li>
-          <li><strong>Hourly/Monthly Units:</strong> Based on 720 hours per month.</li>
+          <li><strong>QBO Unit Rate:</strong> Displayed per resource and adjusted by the environment multiplier.</li>
+          <li><strong>Hourly/Monthly Units:</strong> Calculated based on 720 hours per month.</li>
           <li><strong>USD Table:</strong> Shows:
             <ul>
-              <li>1 QBO Unit = $1.00 base (adjusted by discount for final USD)</li>
-              <li>Total price in USD after discount is applied to the QBO Unit total</li>
+              <li>1 QBO Unit = $1.00 base (adjusted by any discount for the USD total)</li>
+              <li>The final USD amount is the total QBO Units multiplied by the discount-adjusted rate</li>
             </ul>
           </li>
         </ul>
       </li>
       <li><strong>Minimum Spend Warning</strong><br>
         <ul>
-          <li>For On-Prem, a red warning appears next to the “Total” row if usage is under 50,000 QBO Units.</li>
+          <li>If On-Prem is selected and the total is under 50,000 QBO Units, a red warning appears next to the “Total” row to indicate the shortfall.</li>
         </ul>
       </li>
       <li><strong>Export CSV</strong><br>
         <ul>
-          <li>Click <strong>Export CSV</strong> to download a quote summary file for the customer.</li>
+          <li>Click <strong>Export CSV</strong> to generate a downloadable quote summary file for the customer.</li>
         </ul>
       </li>
     </ol>
   </div>
   
-  
-  
+
 </body>
 </html>
