@@ -17,11 +17,49 @@
       transition: background 0.2s ease-in-out;
       cursor: pointer;
     }
+    .export-btn.open-sheet {
+  background: white;
+  color: #4783ef;
+  border: 1px solid #4783ef;
+}
+.export-btn.generating {
+  background: #ccc;
+  cursor: wait;
+}
     .article-content table td, .article-content table th {
       padding: 10px;
     }
     #customer_email {
+      box-sizing: border-box;
       width: 100%;
+      padding: 5px;
+    }
+    .email-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+      
+    }
+    #email_table {
+      height: 80px;
+    }
+    #export-btn:disabled {
+      background-color: #ccc;
+      color: #666;
+      cursor: not-allowed;
+      border: 1px solid #aaa;
+      opacity: 1;
+    }
+    #email-error {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      color: red;
+      font-size: 0.8em;
+      white-space: nowrap;
+      pointer-events: none;
+      line-height: 1.5;
+      z-index: 10;
     }
     #env_select {
       width: 200px;
@@ -39,8 +77,10 @@
       width: 200px;
     }
   </style>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js"></script>
 </head>
-<body>
+<body onload="initGoogleClient()">
   <h2>QBO Unit Pricing Calculator</h2>
 
   <table>
@@ -51,9 +91,14 @@
         <th>Discount</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody id="email_table">
       <tr>
-        <td><input type="email" id="customer_email" placeholder="Enter email"></td>
+        <td>
+          <div class="email-wrapper">
+            <input type="email" id="customer_email" placeholder="Enter email">
+            <div id="email-error"></div>
+          </div>
+        </td>
         <td>
           <select id="env_select" onchange="toggleFields()">
             <option value="1">Cloud</option>
@@ -139,7 +184,8 @@
     </tbody>
   </table>
 
-  <button class="export-btn" onclick="exportCSV()">Export CSV</button>
+  <!-- <button class="export-btn" onclick="exportCSV()">Export CSV</button> -->
+  <button id="export-btn" class="export-btn" onclick="exportToGoogleSheets()">Export to Google Sheets</button>
 
   <script>
 
@@ -176,6 +222,443 @@
       "Jetson Nano": 4, "Jetson TX1": 4, "Jetson TX2": 6, "Jetson Xavier NX": 6,
       "Jetson AGX Xavier": 8, "Jetson Orin NX": 8, "Jetson Orin AGX": 12
     };
+
+    // email
+    window.addEventListener('DOMContentLoaded', () => {
+      const emailInput = document.getElementById('customer_email');
+      const exportBtn = document.getElementById('export-btn');
+      const errorMsg = document.getElementById('email-error');
+
+      function validateEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      }
+
+      function updateExportButtonState() {
+        const email = emailInput.value.trim();
+        const isValid = validateEmail(email);
+
+        exportBtn.disabled = !isValid;
+        exportBtn.title = isValid ? "" : "Enter a valid customer email before exporting.";
+
+        if (!isValid && email.length > 0) {
+          emailInput.style.borderColor = 'red';
+          errorMsg.textContent = 'Please enter a valid email address.';
+        } else {
+          emailInput.style.borderColor = '';
+          errorMsg.textContent = '';
+        }
+      }
+
+      emailInput.addEventListener('input', updateExportButtonState);
+      updateExportButtonState(); // Validate on load
+    });
+
+    // email
+
+    // google 
+    const CLIENT_ID = '480362743671-vm4v30u5elr1deujkfcgvkmq0q00gcs2.apps.googleusercontent.com';
+    const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+    const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+
+    let tokenClient;
+    let gapiInitialized = false;
+
+  
+      async function beautifySheet(spreadsheetId, rows) {
+
+        const baseRowOffset = 0;
+        const pricingSummaryRowIndex = rows.findIndex(r => r[0] === "Pricing Summary");
+
+
+        await gapi.client.sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          resource: {
+            requests: [
+            {
+              repeatCell: {
+                range: {
+                  sheetId: 0,
+                  startRowIndex: 0,   // Row 1
+                  endRowIndex: 8,     // Row 8 (exclusive of 8)
+                  startColumnIndex: 0, // Column A
+                  endColumnIndex: 6    // Column F (exclusive of 6)
+                },
+                cell: {
+                  userEnteredFormat: {
+                    backgroundColor: {
+                      red: 71 / 255,
+                      green: 130 / 255,
+                      blue: 226 / 255
+                    }
+                  }
+                },
+                fields: "userEnteredFormat(backgroundColor,textFormat)"
+              }
+            }, 
+            {
+  mergeCells: {
+    range: {
+      sheetId: 0,
+      startRowIndex: 0,    // Row 1
+      endRowIndex: 8,      // Row 7 (exclusive)
+      startColumnIndex: 5, // Column F (zero-based index)
+      endColumnIndex: 6    // Column G (exclusive)
+    },
+    mergeType: "MERGE_ALL"
+  }
+},
+{
+  updateCells: {
+    start: { sheetId: 0, rowIndex: 0, columnIndex: 5 },
+    rows: Array.from({ length: 10 }, (_, i) => ({
+      values: [
+        i === 0
+          ? {
+              userEnteredValue: {
+                stringValue:
+`    .oO °°°°OOO o.
+  .o°        OO    °o.
+ OO          OO      OO
+OO  .oOOOo   OOOOOo.  OO
+O  OO    OO  OO    OO  O
+O  OO    OO  OO    OO  O
+OO   °OOOOO   °OOO°   OO
+ OO      OO          OO
+  °o     OO         o°
+      °Oo 00   .oO°    qbo`
+              },
+              userEnteredFormat: {
+                wrapStrategy: "WRAP",
+                horizontalAlignment: "LEFT",
+                verticalAlignment: "TOP",
+                textFormat: {
+                  fontFamily: "Roboto Mono",
+                  foregroundColor: { red: 1, green: 1, blue: 1 },
+                  bold: true
+                }
+              }
+            }
+          : { userEnteredValue: { stringValue: "" } }
+      ]
+    })),
+    fields: "userEnteredValue,userEnteredFormat(wrapStrategy,horizontalAlignment,verticalAlignment,textFormat)"
+  },
+  
+},
+              {
+                repeatCell: {
+                  range: {
+                    sheetId: 0,
+                    startRowIndex: 0,
+                    endRowIndex: 1,
+                    startColumnIndex: 1,
+                    endColumnIndex: 2
+                  },
+                  cell: {
+                    userEnteredFormat: {
+                      horizontalAlignment: "LEFT"
+                    }
+                  },
+                  fields: "userEnteredFormat(horizontalAlignment)"
+                }
+              },
+              {
+                mergeCells: {
+                  range: {
+                    sheetId: 0,
+                    startRowIndex: 0, // Row 2 in UI
+                    endRowIndex: 4,   // Row 4 (exclusive, so rows 2–4)
+                    startColumnIndex: 4,
+                    endColumnIndex: 5
+                  },
+                  mergeType: "MERGE_ALL"
+                }
+              },
+
+              {
+  updateCells: {
+    rows: [
+      {
+        values: [
+          {
+            userEnteredValue: {
+              stringValue: "QBO Cloud Inc.\n333 Bush St\nSan Francisco, CA 94104\nUSA"
+            },
+            textFormatRuns: [
+              {
+                startIndex: 0,
+                format: { bold: true }
+              },
+              {
+                startIndex: 14,  // length of "QBO Cloud Inc."
+                format: { bold: false }
+              }
+            ],
+            userEnteredFormat: {
+              wrapStrategy: "WRAP",
+              horizontalAlignment: "LEFT",
+              verticalAlignment: "MIDDLE"
+            }
+          }
+        ]
+      }
+    ],
+    fields: "userEnteredValue,textFormatRuns,userEnteredFormat(wrapStrategy,horizontalAlignment,verticalAlignment)",
+    start: {
+      sheetId: 0,
+      rowIndex: 0,
+      columnIndex: 4
+    }
+  }
+},
+
+              // Blue header row (row 7 in UI)
+              {
+              repeatCell: {
+                range: {
+                  sheetId: 0,
+                  startRowIndex: 8,
+                  endRowIndex: 9,
+                  startColumnIndex: 0,
+                  endColumnIndex: 6
+                },
+                cell: {
+                  userEnteredFormat: {
+                    backgroundColor: { red: 0, green: 0, blue: 1 },
+                    horizontalAlignment: "CENTER",
+                    textFormat: {
+                      foregroundColor: { red: 1, green: 1, blue: 1 },
+                      bold: true
+                    }
+                  }
+                },
+                fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)"
+              }
+            },
+
+              // Column A cells (from row 8 down)
+              {
+                repeatCell: {
+                  range: {
+                    sheetId: 0,
+                    startRowIndex: 9,
+                    startColumnIndex: 0,
+                    endColumnIndex: 1
+                  },
+                  cell: {
+                    userEnteredFormat: {
+                      backgroundColor: { red: 0.95, green: 0.95, blue: 0.95 },
+                      textFormat: { bold: true },
+                      horizontalAlignment: "LEFT"
+                    }
+                  },
+                  fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)"
+                }
+              },
+
+              // Freeze first 7 rows
+              {
+                updateSheetProperties: {
+                  properties: {
+                    sheetId: 0,
+                    gridProperties: { frozenRowCount: 9 }
+                  },
+                  fields: "gridProperties.frozenRowCount"
+                }
+              },
+
+              // Set column widths (A–F)
+              {
+                updateDimensionProperties: {
+                  range: {
+                    sheetId: 0,
+                    dimension: "COLUMNS",
+                    startIndex: 0,
+                    endIndex: 6
+                  },
+                  properties: {
+                    pixelSize: 160
+                  },
+                  fields: "pixelSize"
+                }
+              },
+              {
+                repeatCell: {
+                  range: {
+                    sheetId: 0,
+                    startRowIndex: 17,  // Row 18 in UI
+                    startColumnIndex: 1, // Column B (QU)
+                    endColumnIndex: 2
+                  },
+                  cell: {
+                    userEnteredFormat: {
+                      horizontalAlignment: "RIGHT"
+                    }
+                  },
+                  fields: "userEnteredFormat(horizontalAlignment)"
+                }
+              },
+              {
+  updateDimensionProperties: {
+    range: {
+      sheetId: 0,
+      dimension: "COLUMNS",
+      startIndex: 5,   // Column F
+      endIndex: 6
+    },
+    properties: {
+      pixelSize: 250   // Wider than default (~100)
+    },
+    fields: "pixelSize"
+  }
+},
+{
+  repeatCell: {
+    range: {
+      sheetId: 0,
+      startRowIndex: baseRowOffset + pricingSummaryRowIndex,
+      endRowIndex: baseRowOffset + pricingSummaryRowIndex + 1,
+      startColumnIndex: 0,
+      endColumnIndex: 6
+    },
+    cell: {
+      userEnteredFormat: {
+        backgroundColor: { red: 0, green: 0, blue: 0 }, // or any color
+        textFormat: {
+          bold: true,
+          foregroundColor: { red: 1, green: 1, blue: 1 } // white text
+        },
+        horizontalAlignment: "LEFT"
+      }
+    },
+    fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)"
+  }
+},
+{
+  repeatCell: {
+    range: {
+      sheetId: 0,
+      startRowIndex: 0,    // Row 1 (zero-based)
+      endRowIndex: 4,      // Row 5 (exclusive)
+      startColumnIndex: 0, // Column A
+      endColumnIndex: 1
+    },
+    cell: {
+      userEnteredFormat: {
+        textFormat: {
+          bold: true
+        }
+      }
+    },
+    fields: "userEnteredFormat.textFormat.bold"
+  }
+}
+            ]
+          }
+      });
+    }
+
+    function initGoogleClient() {
+      gapi.load('client', async () => {
+        await gapi.client.init({ discoveryDocs: [DISCOVERY_DOC] });
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPES,
+          callback: async (response) => {
+            if (response.error) {
+              console.error("Token error", response);
+              return;
+            }
+            gapi.client.setToken({ access_token: response.access_token });
+            await exportToGoogleSheetsAfterAuth();
+          }
+        });
+        gapiInitialized = true;
+      });
+    }
+
+    function exportToGoogleSheets() {
+      const button = document.getElementById('export-btn');
+
+      if (!gapiInitialized || !tokenClient) {
+        console.error("Google API not ready");
+        return;
+      }
+
+      // Reset visual state
+      button.disabled = true;
+      button.textContent = "Generating...";
+      button.classList.remove('open-sheet');
+      button.classList.add('generating');
+
+      tokenClient.callback = async (response) => {
+        if (response.error) {
+          console.error("Token error:", response);
+          button.disabled = false;
+          button.textContent = "Export to Google Sheets";
+          return;
+        }
+
+        gapi.client.setToken({ access_token: response.access_token });
+
+        try {
+          const { rows, quoteId } = buildQuoteRows();
+
+          // Always use a real ISO date string
+          const now = new Date();
+          const dateStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
+
+          // const quoteId = document.getElementById('quote_id')?.textContent || '0000';
+          const email = document.getElementById('customer_email')?.value || 'unknown';
+
+          const cleanEmail = email.replace(/[^a-z0-9@.]/gi, '-').toLowerCase();
+          const lcquoteId = quoteId.toLowerCase();
+          const title = `${lcquoteId}-${cleanEmail}`;
+
+          const sheet = await gapi.client.sheets.spreadsheets.create({
+            properties: { title }
+          });
+
+          const spreadsheetId = sheet.result.spreadsheetId;
+
+          await gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: "Sheet1!A1",
+            valueInputOption: "USER_ENTERED",
+            resource: { values: rows }
+          });
+
+          await beautifySheet(spreadsheetId, rows);
+
+          const sheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
+
+          button.disabled = false;
+          button.textContent = "Open Google Sheet";
+          button.classList.remove('generating');
+          button.classList.add('open-sheet');
+
+          button.onclick = () => {
+            window.open(sheetUrl, '_blank');
+            button.textContent = "Export to Google Sheets";
+            button.classList.remove('open-sheet');
+            button.classList.add('export-btn');
+            button.onclick = exportToGoogleSheets;
+          };
+
+        } catch (err) {
+          console.error("Export failed:", err);
+          button.disabled = false;
+          button.textContent = "Export to Google Sheets";
+          button.classList.remove('generating');
+        }
+      };
+
+      tokenClient.requestAccessToken({ prompt: '' });
+    }
+
+    window.onload = initGoogleClient;
+
+    // google
 
     function toggleFields() {
       const isCloud = document.getElementById("env_select").value === "1";
@@ -335,8 +818,89 @@
       document.getElementById("total_usd").textContent = totalUSD.toFixed(2);
   }
 
+  function buildQuoteRows() {
+    const email = document.getElementById('customer_email')?.value || "nemo@qbo.io";
+    const envValue = parseFloat(document.getElementById('env_select')?.value) || 0;
+    const environment = envValue === 1 ? "QBO Cloud" : "Customer On-Prem";
+    const discountInput = parseFloat(document.getElementById('discount_input')?.value || 0);
+    const discount = discountInput + "%";
+    const usdDiscountFactor = 1 - discountInput / 100;
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
+    const quoteId = `QBO-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 9000 + 1000)}`;
+
+    const rows = [
+      ["Quote Date", dateStr],
+      ["Quote Number", quoteId],
+      ["Customer Email", email],
+      ["Environment", environment],
+      [],
+      [],
+      [],
+      [],
+      ["Resource Type", "Quantity", "Hourly QBO Unit Rate", "Hourly QBO Units", "Monthly QBO Units", "SKU"]
+    ];
+
+    const cpuQty = document.getElementById("cpu_qty")?.value || 0;
+    const cpuRate = document.getElementById("cpu_hourly")?.textContent || "0";
+    const cpuHourly = document.getElementById("cpu_hourly")?.textContent || "0";
+    const cpuMonthly = parseFloat(document.getElementById("cpu_units")?.textContent || 0);
+    rows.push(["CPU Core", cpuQty, cpuRate, cpuHourly, cpuMonthly.toFixed(2), "QU"]);
+
+    let gpuTotal = 0;
+    document.querySelectorAll('#gpu-rows tr').forEach(row => {
+      const model = row.querySelector('.gpu_model')?.value || "Unknown GPU";
+      const qty = row.querySelector('.gpu_qty')?.value || "0";
+      const rate = row.querySelector('.gpu_rate')?.textContent || "0";
+      const hourly = row.querySelector('.gpu_hourly')?.textContent || "0";
+      const monthly = parseFloat(row.querySelector('.gpu_units')?.textContent || 0);
+      gpuTotal += monthly;
+      rows.push([model, qty, rate, hourly, monthly.toFixed(2), "QU"]);
+    });
+
+    const ramQty = document.getElementById("ram_qty")?.value || 0;
+    const ramRate = document.getElementById("ram_hourly")?.textContent || "0";
+    const ramHourly = document.getElementById("ram_hourly")?.textContent || "0";
+    const ramMonthly = parseFloat(document.getElementById("ram_units")?.textContent || 0);
+    rows.push(["RAM (GB)", ramQty, ramRate, ramHourly, ramMonthly.toFixed(2), "QU"]);
+
+    const diskQty = document.getElementById("disk_qty")?.value || 0;
+    const diskRate = document.getElementById("disk_hourly")?.textContent || "0";
+    const diskHourly = document.getElementById("disk_hourly")?.textContent || "0";
+    const diskMonthly = parseFloat(document.getElementById("disk_units")?.textContent || 0);
+    rows.push(["Disk (GB)", diskQty, diskRate, diskHourly, diskMonthly.toFixed(2), "QU"]);
+
+    const netQty = document.getElementById("net_qty")?.value || 0;
+    const netRate = document.getElementById("net_hourly")?.textContent || "0";
+    const netHourly = document.getElementById("net_hourly")?.textContent || "0";
+    const netMonthly = parseFloat(document.getElementById("net_units")?.textContent || 0);
+    rows.push(["Network (TB)", netQty, netRate, netHourly, netMonthly.toFixed(2), "QU"]);
+
+    const totalUnits = cpuMonthly + gpuTotal + ramMonthly + diskMonthly + netMonthly;
+    const totalUSD = totalUnits * usdDiscountFactor;
+
+    rows.push([]);
+    rows.push(["Total QBO Units (QU)", "", "", "", totalUnits.toFixed(2)]);
+    rows.push(["Total (USD)", "", "", "", totalUSD.toFixed(2)]);
+
+    rows.push([]);
+    rows.push(["Pricing Summary"]);
+    rows.push(["SKU", "QU"]);
+    rows.push(["List Price", totalUnits.toFixed(2)]);
+    rows.push(["Discount (%)", discount]);
+    rows.push(["Net Price (USD / month)", "$" + totalUSD.toFixed(2)]);
+    rows.push(["Annual QBO Units", (totalUnits * 12).toFixed(2)]); 
+    rows.push(["Annual Price (USD)", "$" + (totalUSD * 12).toFixed(2)]);
+
+    return { rows, quoteId, dateStr };
+  }
+
+
 
   function exportCSV() {
+
+  
     const email = document.getElementById('customer_email')?.value || "Unnamed";
     const envValue = parseFloat(document.getElementById('env_select')?.value) || 0;
     const environment = envValue === 1 ? "QBO Cloud" : "Customer On-Prem";
@@ -355,6 +919,8 @@
       ["Customer Email", email],
       ["Environment", environment],
       ["Discount Applied", discount],
+      [],
+      [],
       [],
       ["Resource Type", "Quantity", "Hourly QBO Unit Rate", "Hourly QBO Units", "Monthly QBO Units"]
     ];
