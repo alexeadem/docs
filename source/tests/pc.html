@@ -130,7 +130,7 @@
     <tbody id="calc-body">
       <tr>
         <td>CPU Core</td>
-        <td><input type="number" value="1" id="cpu_qty" min="0"></td>
+        <td><input type="number" value="1" id="cpu_qty" min="0" ></td>
         <td id="cpu_rate"></td>
         <td id="cpu_hourly"></td>
         <td id="cpu_units"></td>
@@ -138,21 +138,21 @@
       <tbody id="gpu-rows"></tbody>
       <tr>
         <td>RAM (GB)</td>
-        <td><input type="number" value="0" id="ram_qty" min="0"></td>
+        <td><input type="number" value="0" id="ram_qty" min="0" onchange="calculate()"></td>
         <td id="ram_rate"></td>
         <td id="ram_hourly"></td>
         <td id="ram_units"></td>
       </tr>
       <tr>
         <td>Disk (GB)</td>
-        <td><input type="number" value="0" id="disk_qty" min="0"></td>
+        <td><input type="number" value="0" id="disk_qty" min="0" onchange="calculate()"></td>
         <td id="disk_rate"></td>
         <td id="disk_hourly"></td>
         <td id="disk_units"></td>
       </tr>
       <tr>
         <td>Network (TB)</td>
-        <td><input type="number" value="0" id="net_qty" min="0"></td>
+        <td><input type="number" value="0" id="net_qty" min="0" onchange="calculate()"></td>
         <td id="net_rate"></td>
         <td id="net_hourly"></td>
         <td id="net_units"></td>
@@ -882,15 +882,15 @@ OO   °OOOOO   °OOO°   OO
 
     rows.push([]);
     rows.push(["Total QBO Units (QU)", "", "", "", totalUnits.toFixed(2)]);
-    rows.push(["Total (USD)", "", "", "", totalUSD.toFixed(2)]);
+    // rows.push(["Total (USD)", "", "", "", totalUSD.toFixed(2)]);
 
     rows.push([]);
     rows.push(["Pricing Summary"]);
     rows.push(["SKU", "QU"]);
-    rows.push(["List Price", totalUnits.toFixed(2)]);
-    rows.push(["Discount (%)", discount]);
-    rows.push(["Net Price (USD / month)", "$" + totalUSD.toFixed(2)]);
     rows.push(["Annual QBO Units", (totalUnits * 12).toFixed(2)]); 
+    rows.push(["Annual List Price (USD)", "$" + totalUnits.toFixed(2) * 12]);
+    rows.push(["Discount (%)", discount]);
+    // rows.push(["Net Price (USD / month)", "$" + totalUSD.toFixed(2)]);
     rows.push(["Annual Price (USD)", "$" + (totalUSD * 12).toFixed(2)]);
 
     return { rows, quoteId, dateStr };
