@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QBO Pricing Calculator</title>
+  <style>
+    table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
+    th, td { padding: 0.5em; border: 1px solid #ccc; text-align: left; width: 100%}
+    select, input { width: 60px; height: 35px;border-radius: 5px;padding: 5px; }
+    tfoot td { font-weight: bold; }
+    .export-btn, .discount-btn, .gpu-btn {
+      padding: 10px 16px;
+      border-radius: 5px;
+      background: #4783ef;
+      color: white;
+      border: 0;
+      transition: background 0.2s ease-in-out;
+      cursor: pointer;
+    }
+    .export-btn.open-sheet {
+  background: white;
+  color: #4783ef;
+  border: 1px solid #4783ef;
+}
+.export-btn.generating {
+  background: #ccc;
+  cursor: wait;
+}
+    .article-content table td, .article-content table th {
+      padding: 10px;
+    }
+    #customer_email {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 5px;
+    }
+    .email-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+      
+    }
+    #email_table {
+      height: 80px;
+    }
+    #export-btn:disabled {
+      background-color: #ccc;
+      color: #666;
+      cursor: not-allowed;
+      border: 1px solid #aaa;
+      opacity: 1;
+    }
+    #email-error {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      color: red;
+      font-size: 0.8em;
+      white-space: nowrap;
+      pointer-events: none;
+      line-height: 1.5;
+      z-index: 10;
+    }
+    #env_select {
+      width: 200px;
+    }
+    .discount-controls, .gpu-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .discount-controls span {
+      min-width: 40px;
+      display: inline-block;
+    }
+    .gpu_model {
+      width: 200px;
+    }
+  </style>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js"></script>
+</head>
+  <body>
+  <h2>QBO Unit Calculator</h2>
+
+
+  <table style="width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 1em;">
+    <tr>
+      <td style="border: 1px solid #ccc; padding: 0.5em; width: 150px; text-align: center;">
+        <img src="/logo.svg" alt="QBO Logo" style="max-width: 60px; max-height: 60px; display: block; margin: 0 auto;">
+      </td>
+      <td style="position: relative; height: 100px; border: 1px solid #ccc;">
+        <div style="position: absolute; top: 0.25em; left: 0.5em; font-size: 0.75em; color: gray;">
+          1 QBO Unit = <span id="usd_per_unit_top">1.00 USD</span>
+        </div>
+        <div style="
+        position: absolute;
+        bottom: 0.5em;
+        right: 0.5em;
+        font-family: 'Courier New', monospace;
+        color: #0047AB;
+        text-shadow: 0 0 1px #0047AB;
+        text-align: right;
+      ">
+          <div style="font-size: 4em; font-weight: bold; line-height: 0.8;">
+            <span id="big_total_units">0.00</span>
+          </div>
+          <div style="font-size: 0.75em;">
+            units/month
+          </div>
+        </div>
+      </td>
+    </tr>
+  </table>
+  
+  
+  
+  
+  
+
+  <table>
+    <thead>
+      <tr>
+        <th>Resource Type</th>
+        <th>Quantity</th>
+        <th>Hourly QBO Units</th>
+        <th>Monthly QBO Units</th>
+      </tr>
+    </thead>
+    <tbody id="calc-body">
+      <tr>
+        <td>CPU Core</td>
+        <td><input type="number" value="1" id="cpu_qty" min="0" ></td>
+        <td id="cpu_hourly"></td>
+        <td id="cpu_units"></td>
+      </tr>
+      <tbody id="gpu-rows"></tbody>
+      <tr>
+        <td>RAM (GB)</td>
+        <td><input type="number" value="0" id="ram_qty" min="0" onchange="calculate()"></td>
+        <td id="ram_hourly"></td>
+        <td id="ram_units"></td>
+      </tr>
+      <tr>
+        <td>Disk (GB)</td>
+        <td><input type="number" value="0" id="disk_qty" min="0" onchange="calculate()"></td>
+        <td id="disk_hourly"></td>
+        <td id="disk_units"></td>
+      </tr>
+      <tr>
+        <td>Network (TB)</td>
+        <td><input type="number" value="0" id="net_qty" min="0" onchange="calculate()"></td>
+        <td id="net_hourly"></td>
+        <td id="net_units"></td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td id="total_label" colspan="2">Total</td>
+        <td id="total_units_per_hour"></td>
+        <td id="total_units_per_month"></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <script>
+
+    const cpuRate = 0.025;
+    const ramRate = 0.005;
+    const diskRate = 0.0005;
+    const netRate = 0.25;
+    const minSpend = 25000;
+
+
+
+    const gpuRates = {
+      "GB300": 4.00, "GB200": 3.00, "A2000": 0.45, "A100 80GB": 2.50, "A100 40GB": 2.25,
+      "H100": 3.50, "L40S": 2.00, "L4": 1.25, "RTX A6000": 1.75, "RTX 6000 Ada": 2.25,
+      "RTX A5000": 1.50, "RTX 3090": 1.20, "RTX 3080": 1.00, "RTX 3070": 0.80, "T4": 0.60,
+      "V100 32GB": 1.75, "V100 16GB": 1.50, "P100": 1.00, "P40": 0.75, "A2": 0.40, "K80": 0.20,
+      "Jetson Nano": 0.08, "Jetson TX1": 0.10, "Jetson TX2": 0.12, "Jetson Xavier NX": 0.25,
+      "Jetson AGX Xavier": 0.40, "Jetson Orin NX": 0.60, "Jetson Orin AGX": 0.80
+    };
+
+    const jetsonCpuCores = {
+      "Jetson Nano": 4, "Jetson TX1": 4, "Jetson TX2": 6, "Jetson Xavier NX": 6,
+      "Jetson AGX Xavier": 8, "Jetson Orin NX": 8, "Jetson Orin AGX": 12
+    };
+
+
+    const hwOther = {
+      "Jetson Nano": 4, "Jetson TX1": 4, "Jetson TX2": 6, "Jetson Xavier NX": 6,
+      "Jetson AGX Xavier": 8, "Jetson Orin NX": 8, "Jetson Orin AGX": 12
+    };
+
+    
+
+    function toggleFields() {
+      ["ram_qty", "disk_qty", "net_qty"].forEach(id => {
+        document.getElementById(id).disabled = false; // Always enabled
+      });
+      calculate();
+    }
+
+    function addGpuRow(model = "A100 80GB", qty = 0) {
+      const tbody = document.getElementById("gpu-rows");
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td>
+          <div class="gpu-controls">
+            GPU
+            <select class="gpu_model">${Object.keys(gpuRates).map(g => `<option value="${g}" ${g === model ? "selected" : ""}>${g}</option>`).join('')}</select>
+            <button class="gpu-btn gpu-minus">−</button>
+            <button class="gpu-btn gpu-plus">+</button>
+          </div>
+        </td>
+        <td><input type="number" class="gpu_qty" value="${qty}" min="0"></td>
+        <td class="gpu_hourly"></td>
+        <td class="gpu_units"></td>
+      `;
+
+      // <td class="gpu_rate"></td>
+      tbody.appendChild(row);
+      attachGpuHandlers();
+      updateMinusButtons();
+      calculate();
+    }
+
+    function attachGpuHandlers() {
+      document.querySelectorAll('.gpu_model, .gpu_qty').forEach(el => el.onchange = calculate);
+      document.querySelectorAll('.gpu-plus').forEach(btn => btn.onclick = () => addGpuRow());
+      document.querySelectorAll('.gpu-minus').forEach(btn => btn.onclick = (e) => {
+        if (document.querySelectorAll('.gpu-minus').length > 1) {
+          e.target.closest('tr').remove();
+          calculate();
+        }
+        updateMinusButtons();
+      });
+    }
+
+    function updateMinusButtons() {
+      document.querySelectorAll('.gpu-minus').forEach((btn, i, arr) => {
+        btn.disabled = arr.length <= 1;
+      });
+    }
+
+    function calculate() {
+      const envMultiplier = 1;
+
+      const discount = 0;
+      const multiplier = envMultiplier;             // for QBO Unit computation only
+      const usdDiscountFactor = 1 - discount / 100; // for USD conversion only
+      const hours = 720;
+
+      const cpuField = document.getElementById("cpu_qty");
+      let cpuQty = parseFloat(cpuField.value);
+      let gpuTotal = 0;
+      let gpuTotalHourly = 0;
+      let cpuOverridden = false;
+
+      document.querySelectorAll('#gpu-rows tr').forEach(row => {
+        const model = row.querySelector('.gpu_model').value;
+        const qty = parseFloat(row.querySelector('.gpu_qty').value);
+        const rate = gpuRates[model];
+        const rateAdj = rate * multiplier;
+        const hourly = qty * rateAdj;
+        const monthly = hourly * hours;
+
+        row.querySelector('.gpu_hourly').textContent = hourly.toFixed(4);
+        row.querySelector('.gpu_units').textContent = Math.round(monthly);
+        
+        gpuTotal += monthly;
+        gpuTotalHourly += hourly;
+
+        if (jetsonCpuCores[model] && qty > 0) {
+          cpuQty = jetsonCpuCores[model];
+          cpuField.value = cpuQty;
+          cpuField.readOnly = true;
+          cpuOverridden = true;
+        }
+
+      });
+
+      if (!cpuOverridden) {
+        cpuField.readOnly = false;
+      }
+
+
+      const ramQty = parseFloat(document.getElementById("ram_qty").value);
+      const diskQty = parseFloat(document.getElementById("disk_qty").value);
+      const netQty = parseFloat(document.getElementById("net_qty").value);
+
+      const cpuMonthly = cpuQty * cpuRate * multiplier * hours;
+      const ramMonthly = ramQty * ramRate * multiplier * hours;
+      const diskMonthly = diskQty * diskRate * multiplier * hours;
+      const netMonthly = netQty * netRate * multiplier * hours;
+
+      const cpuHourly = cpuQty * cpuRate * multiplier;
+      const ramHourly = ramQty * ramRate * multiplier;
+      const diskHourly = diskQty * diskRate * multiplier;
+      const netHourly = netQty * netRate * multiplier;
+
+      const totalUnits = cpuMonthly + gpuTotal + ramMonthly + diskMonthly + netMonthly;
+      const totalUnitsHourly = cpuHourly + gpuTotalHourly + ramHourly + diskHourly + netHourly;
+
+      const totalUSD = totalUnits * usdDiscountFactor;
+
+      document.getElementById("cpu_hourly").textContent = (cpuQty * cpuRate * multiplier).toFixed(4);
+      document.getElementById("cpu_units").textContent = Math.round(cpuMonthly);
+
+      document.getElementById("ram_hourly").textContent = (ramQty * ramRate * multiplier).toFixed(4);
+      document.getElementById("ram_units").textContent = Math.round(ramMonthly);
+
+      document.getElementById("disk_hourly").textContent = (diskQty * diskRate * multiplier).toFixed(4);
+      document.getElementById("disk_units").textContent = Math.round(diskMonthly); 
+
+      document.getElementById("net_hourly").textContent = (netQty * netRate * multiplier).toFixed(4);
+      document.getElementById("net_units").textContent = Math.round(netMonthly); 
+
+      // Update total QBO Units
+      const totalCell = document.getElementById("total_units_per_month");
+      totalCell.textContent = Math.round(totalUnits);
+
+      // Update the large calculator-style number
+      document.getElementById("big_total_units").textContent = Math.round(totalUnits);
+
+      const totalCellHourly = document.getElementById("total_units_per_hour");
+      totalCellHourly.textContent = totalUnitsHourly.toFixed(4);
+
+      const row = document.getElementById("total_label");
+      const minMonthlySpend = minSpend / 12;
+      
+
+      if (row) {
+        if (totalUnits < minMonthlySpend) {
+          const remaining = (minMonthlySpend - totalUnits).toFixed(2);
+          row.innerHTML = `
+        <div>
+          <strong>Total</strong>
+          <a href="#min-spend-info" style="margin-left: 0.3em;">
+          <span style="font-size: 0.75em; margin-left: 0.5em;">
+            216.00 / 25,000 QBO Units —
+            <strong>24,784 left *</strong>
+          </span>
+           </a>
+        </div>
+          `;
+        } else {
+          row.innerHTML = `<strong>Total</strong>`;
+        }
+
+      }
+
+  }
+    addGpuRow();
+    toggleFields();
+    calculate();
+    document.getElementById("cpu_qty").addEventListener("input", calculate);
+  </script>
+<div style="margin-top: 2em; padding: 1em; color: #555; font-size: 0.9em;">
+  <h3 style="margin-top: 0;">What Are QBO Units?</h3>
+  <p>
+    <strong>QBO Units</strong> are a standardized way to represent compute capacity within QBO. They abstract CPU, GPU, RAM, disk, and network into a single, unified unit — making it easier to plan and scale workloads across any hardware or environment.
+  </p>
+  <p>
+    Think of QBO Units like <strong>arcade tokens</strong>: you don’t pay per second of usage — you estimate how many tokens you’ll need to run your workload. This calculator helps answer the core question: <strong>“How many Units do I need?”</strong>
+  </p>
+  <p>
+    For reference, 1 QBO Unit is generally equivalent to <strong>$1.00 USD</strong>. If you're planning a large deployment or want custom pricing, please <a href="https://qbo.io/contact-us/">contact our sales team</a> to learn more about volume discounts.
+  </p>
+
+  <h3>Why Use QBO Units?</h3>
+  <ul>
+    <li><strong>Simplified Planning:</strong> Estimate compute needs clearly across diverse workloads and hardware types.</li>
+    <li><strong>Hardware-Agnostic:</strong> From A100s to Jetsons, all resources are priced and compared the same way.</li>
+    <li><strong>Cross-Environment Compatible:</strong> Use the same unit system in cloud, on-prem, airgapped, or hybrid setups.</li>
+    <li><strong>Not Tied to Utilization:</strong> QBO Units represent <em>access</em> to compute — not metered consumption or overage fees.</li>
+    <li><strong>Predictable Accounting:</strong> Because each unit maps to $1.00 (before discount), teams can easily forecast and track costs.</li>
+    <li><strong>Budget & Quota Friendly:</strong> Pre-purchase Units, assign to teams, and track usage over time — just like credits or prepaid capacity.</li>
+  </ul>
+
+  <h3>Using the Calculator</h3>
+  <ol>
+    <li><strong>Define Your Workload</strong>
+      <ul>
+        <li>Enter the number of <strong>CPU cores</strong> and select your <strong>GPU models</strong>.</li>
+        <li>Specify your expected <strong>RAM</strong>, <strong>disk</strong>, and <strong>network</strong> needs.</li>
+        <li>If a Jetson model is selected, CPU values are auto-filled and locked.</li>
+      </ul>
+    </li>
+    <li><strong>Get Your Estimate</strong>
+      <ul>
+        <li>View both <strong>hourly</strong> and <strong>monthly</strong> QBO Unit totals based on your input.</li>
+        <li>Use this estimate to understand how far your budget can go — or what kind of hardware your Units can unlock.</li>
+      </ul>
+    </li>
+  </ol>
+
+  <div id="min-spend-info">
+    <h3>Annual Minimum for Customer-Provided Metal</h3>
+    <p>
+      When deploying on your own hardware (On-Prem), QBO requires a minimum commitment of <strong>25,000 QBO Units per year</strong>. This ensures sufficient usage to support onboarding, support, and resource scheduling across your infrastructure.
+    </p>
+    <p>
+      This calculator estimates how many QBO Units you’ll need for your workload. If the projected annual total is under 25,000 Units, we’ll highlight the shortfall here — so you can adjust your sizing or plan accordingly.
+    </p>
+    <p>
+      This minimum only applies to customer-owned infrastructure. There is no minimum when running workloads in QBO’s cloud environments.
+    </p>
+  </div>
+  <p style="margin-top: 1.5em;">
+    <strong>Important:</strong> QBO Units are not tied to real-time usage or metering. They’re a token-based model representing reserved compute access. For terms and conditions, read our <a href="terms" target="_blank">QBO Units Terms of Service</a>.
+  </p>
+</div>
+
+
+  
+  
+
+</body>
+</html>
