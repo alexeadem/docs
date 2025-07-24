@@ -172,26 +172,45 @@
     const minSpend = 25000;
 
 
-
     const gpuRates = {
-      "GB300": 4.00, "GB200": 3.00, "A2000": 0.45, "A100 80GB": 2.50, "A100 40GB": 2.25,
-      "H100": 3.50, "L40S": 2.00, "L4": 1.25, "RTX A6000": 1.75, "RTX 6000 Ada": 2.25,
-      "RTX A5000": 1.50, "RTX 3090": 1.20, "RTX 3080": 1.00, "RTX 3070": 0.80, "T4": 0.60,
-      "V100 32GB": 1.75, "V100 16GB": 1.50, "P100": 1.00, "P40": 0.75, "A2": 0.40, "K80": 0.20,
-      "Jetson Nano": 0.08, "Jetson TX1": 0.10, "Jetson TX2": 0.12, "Jetson Xavier NX": 0.25,
-      "Jetson AGX Xavier": 0.40, "Jetson Orin NX": 0.60, "Jetson Orin AGX": 0.80
+      "GB300": 4.00,
+      "GB200": 5.50,
+      "B200": 5.45,
+      "H200": 3.40,
+      "A2000": 0.45,
+      "A100 80GB": 1.70,
+      "A100 40GB": 1.06,
+      "H100": 2.50,
+      "L40S": 1.30,
+      "L4": 1.25,
+      "RTX A6000": 1.75,
+      "RTX 6000 Ada": 2.25,
+      "RTX A5000": 1.50,
+      "RTX 3090": 1.20,
+      "RTX 3080": 1.00,
+      "RTX 3070": 0.80,
+      "T4": 0.60,
+      "V100 32GB": 1.10,
+      "V100 16GB": 0.85,
+      "P100": 1.00,
+      "P40": 0.75,
+      "A2": 0.40,
+      "K80": 0.20,
+      "Jetson Nano": 0.08,
+      "Jetson TX1": 0.10,
+      "Jetson TX2": 0.12,
+      "Jetson Xavier NX": 0.25,
+      "Jetson AGX Xavier": 0.40,
+      "Jetson Orin NX": 0.60,
+      "Jetson Orin AGX": 0.80
     };
+
 
     const jetsonCpuCores = {
       "Jetson Nano": 4, "Jetson TX1": 4, "Jetson TX2": 6, "Jetson Xavier NX": 6,
       "Jetson AGX Xavier": 8, "Jetson Orin NX": 8, "Jetson Orin AGX": 12
     };
 
-
-    const hwOther = {
-      "Jetson Nano": 4, "Jetson TX1": 4, "Jetson TX2": 6, "Jetson Xavier NX": 6,
-      "Jetson AGX Xavier": 8, "Jetson Orin NX": 8, "Jetson Orin AGX": 12
-    };
 
     
 
@@ -332,7 +351,7 @@
       const minMonthlySpend = minSpend / 12;
       
 
-      if (row) {
+      if (0) {
         if (totalUnits < minMonthlySpend) {
           const remaining = (minMonthlySpend - totalUnits).toFixed(2);
           row.innerHTML = `
@@ -364,7 +383,7 @@
     <strong>QBO Units</strong> are a standardized way to represent compute capacity within QBO. They abstract CPU, GPU, RAM, disk, and network into a single, unified unit — making it easier to plan and scale workloads across any hardware or environment.
   </p>
   <p>
-    Think of QBO Units like <strong>arcade tokens</strong>: you don’t pay per second of usage — you estimate how many tokens you’ll need to run your workload. This calculator helps answer the core question: <strong>“How many Units do I need?”</strong>
+    Think of QBO Units like <strong>fuel for your infrastructure</strong>: you’re not paying for each mile driven, but rather filling your tank with enough fuel to complete the journey. This calculator helps answer the core question: <strong>“How many Units will I need to run my workloads?”</strong>
   </p>
   <p>
     For reference, 1 QBO Unit is generally equivalent to <strong>$1.00 USD</strong>. If you're planning a large deployment or want custom pricing, please <a href="https://qbo.io/contact-us/">contact our sales team</a> to learn more about volume discounts.
@@ -377,7 +396,7 @@
     <li><strong>Cross-Environment Compatible:</strong> Use the same unit system in cloud, on-prem, airgapped, or hybrid setups.</li>
     <li><strong>Not Tied to Utilization:</strong> QBO Units represent <em>access</em> to compute — not metered consumption or overage fees.</li>
     <li><strong>Predictable Accounting:</strong> Because each unit maps to $1.00 (before discount), teams can easily forecast and track costs.</li>
-    <li><strong>Budget & Quota Friendly:</strong> Pre-purchase Units, assign to teams, and track usage over time — just like credits or prepaid capacity.</li>
+    <li><strong>Budget & Quota Friendly:</strong> Pre-purchase Units, assign to teams, and track usage over time — just like prepaid fuel for your infrastructure.</li>
   </ul>
 
   <h3>Using the Calculator</h3>
@@ -392,7 +411,7 @@
     <li><strong>Get Your Estimate</strong>
       <ul>
         <li>View both <strong>hourly</strong> and <strong>monthly</strong> QBO Unit totals based on your input.</li>
-        <li>Use this estimate to understand how far your budget can go — or what kind of hardware your Units can unlock.</li>
+        <li>Use this estimate to understand how far your compute fuel will take you — and how to size your workload accordingly.</li>
       </ul>
     </li>
   </ol>
@@ -400,7 +419,7 @@
   <div id="min-spend-info">
     <h3>Annual Minimum for Customer-Provided Metal</h3>
     <p>
-      When deploying on your own hardware (On-Prem), QBO requires a minimum commitment of <strong>25,000 QBO Units per year</strong>. This ensures sufficient usage to support onboarding, support, and resource scheduling across your infrastructure.
+      When deploying on your own hardware (On-Prem), QBO requires a minimum commitment. This ensures sufficient usage to support onboarding, support, and resource scheduling across your infrastructure.
     </p>
     <p>
       This calculator estimates how many QBO Units you’ll need for your workload. If the projected annual total is under 25,000 Units, we’ll highlight the shortfall here — so you can adjust your sizing or plan accordingly.
@@ -409,10 +428,12 @@
       This minimum only applies to customer-owned infrastructure. There is no minimum when running workloads in QBO’s cloud environments.
     </p>
   </div>
+
   <p style="margin-top: 1.5em;">
-    <strong>Important:</strong> QBO Units are not tied to real-time usage or metering. They’re a token-based model representing reserved compute access. For terms and conditions, read our <a href="terms" target="_blank">QBO Units Terms of Service</a>.
+    <strong>Important:</strong> QBO Units are not tied to real-time usage or metering. They represent <em>reserved access</em> to compute resources — similar to buying fuel before a trip. For full details, read our <a href="terms" target="_blank">QBO Units Terms of Service</a>.
   </p>
 </div>
+
 
 
   
