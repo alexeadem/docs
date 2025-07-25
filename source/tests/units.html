@@ -17,6 +17,9 @@
       transition: background 0.2s ease-in-out;
       cursor: pointer;
     }
+    #calc-body > tr:nth-child(even) {
+      background: rgba(255, 255, 0, 0.1);
+    }
     .export-btn.open-sheet {
       background: white;
       color: #4783ef;
@@ -221,11 +224,15 @@
     <tbody id="calc-body">
       <tr>
         <td>CPU Core</td>
-        <td><input type="number" value="1" id="cpu_qty" min="0" ></td>
+        <td><input type="number" value="1" id="cpu_qty" min="0"></td>
         <td class="calculator-units" id="cpu_hourly"></td>
         <td class="calculator-units" id="cpu_units"></td>
       </tr>
-      <tbody id="gpu-rows"></tbody>
+  
+      <!-- GPU rows will be inserted here dynamically -->
+      <!-- We use a dummy anchor row to insert before RAM -->
+      <tr id="gpu-anchor"></tr>
+  
       <tr>
         <td>RAM (GB)</td>
         <td><input type="number" value="0" id="ram_qty" min="0" onchange="calculate()"></td>
@@ -253,6 +260,7 @@
       </tr>
     </tfoot>
   </table>
+  
 
   <script>
 
@@ -313,14 +321,16 @@
     }
 
     function addGpuRow(model = "A100 80GB", qty = 0) {
-      const tbody = document.getElementById("gpu-rows");
+      const anchor = document.getElementById("gpu-anchor");
       const row = document.createElement("tr");
 
       row.innerHTML = `
         <td>
           <div class="gpu-controls">
             GPU
-            <select class="gpu_model">${Object.keys(gpuRates).map(g => `<option value="${g}" ${g === model ? "selected" : ""}>${g}</option>`).join('')}</select>
+            <select class="gpu_model">
+              ${Object.keys(gpuRates).map(g => `<option value="${g}" ${g === model ? "selected" : ""}>${g}</option>`).join('')}
+            </select>
             <button class="gpu-btn gpu-minus">−</button>
             <button class="gpu-btn gpu-plus">+</button>
           </div>
@@ -330,8 +340,9 @@
         <td class="gpu_units"></td>
       `;
 
-      // <td class="gpu_rate"></td>
-      tbody.appendChild(row);
+      // Insert before the anchor row in the main tbody
+      anchor.insertAdjacentElement("beforebegin", row);
+
       attachGpuHandlers();
       updateMinusButtons();
       calculate();
@@ -355,12 +366,20 @@
       });
     }
 
+    function applyZebraStripes() {
+      const rows = Array.from(document.querySelectorAll("#calc-body > tr"))
+        .filter(row => !row.id || row.id !== "gpu-anchor");
+
+      rows.forEach((row, i) => {
+        row.style.backgroundColor = i % 2 === 0 ? "rgba(255, 255, 0, 0.1)" : "transparent";
+      });
+    }
+
     function calculate() {
       const envMultiplier = 1;
-
       const discount = 0;
-      const multiplier = envMultiplier;             // for QBO Unit computation only
-      const usdDiscountFactor = 1 - discount / 100; // for USD conversion only
+      const multiplier = envMultiplier;
+      const usdDiscountFactor = 1 - discount / 100;
       const hours = 720;
 
       const cpuField = document.getElementById("cpu_qty");
@@ -369,17 +388,22 @@
       let gpuTotalHourly = 0;
       let cpuOverridden = false;
 
-      document.querySelectorAll('#gpu-rows tr').forEach(row => {
-        const model = row.querySelector('.gpu_model').value;
-        const qty = parseFloat(row.querySelector('.gpu_qty').value);
+      // FIX: Select GPU rows based on class inside #calc-body
+      const gpuRows = Array.from(document.querySelectorAll("#calc-body tr")).filter(
+        row => row.querySelector(".gpu-controls")
+      );
+
+      gpuRows.forEach(row => {
+        const model = row.querySelector(".gpu_model").value;
+        const qty = parseFloat(row.querySelector(".gpu_qty").value);
         const rate = gpuRates[model];
         const rateAdj = rate * multiplier;
         const hourly = qty * rateAdj;
         const monthly = hourly * hours;
 
-        row.querySelector('.gpu_hourly').textContent = hourly.toFixed(4);
-        row.querySelector('.gpu_units').textContent = Math.round(monthly);
-        
+        row.querySelector(".gpu_hourly").textContent = hourly.toFixed(4);
+        row.querySelector(".gpu_units").textContent = Math.round(monthly);
+
         gpuTotal += monthly;
         gpuTotalHourly += hourly;
 
@@ -389,13 +413,11 @@
           cpuField.readOnly = true;
           cpuOverridden = true;
         }
-
       });
 
       if (!cpuOverridden) {
         cpuField.readOnly = false;
       }
-
 
       const ramQty = parseFloat(document.getElementById("ram_qty").value);
       const diskQty = parseFloat(document.getElementById("disk_qty").value);
@@ -416,61 +438,27 @@
 
       const totalUSD = totalUnits * usdDiscountFactor;
 
-      document.getElementById("cpu_hourly").textContent = (cpuQty * cpuRate * multiplier).toFixed(4);
+      document.getElementById("cpu_hourly").textContent = cpuHourly.toFixed(4);
       document.getElementById("cpu_units").textContent = Math.round(cpuMonthly);
 
-      document.getElementById("ram_hourly").textContent = (ramQty * ramRate * multiplier).toFixed(4);
+      document.getElementById("ram_hourly").textContent = ramHourly.toFixed(4);
       document.getElementById("ram_units").textContent = Math.round(ramMonthly);
 
-      document.getElementById("disk_hourly").textContent = (diskQty * diskRate * multiplier).toFixed(4);
-      document.getElementById("disk_units").textContent = Math.round(diskMonthly); 
+      document.getElementById("disk_hourly").textContent = diskHourly.toFixed(4);
+      document.getElementById("disk_units").textContent = Math.round(diskMonthly);
 
-      document.getElementById("net_hourly").textContent = (netQty * netRate * multiplier).toFixed(4);
-      document.getElementById("net_units").textContent = Math.round(netMonthly); 
+      document.getElementById("net_hourly").textContent = netHourly.toFixed(4);
+      document.getElementById("net_units").textContent = Math.round(netMonthly);
 
-      // Update total QBO Units
-      const totalCell = document.getElementById("total_units_per_month");
-      totalCell.textContent = Math.round(totalUnits);
-
-      // Update the large calculator-style number
-      // document.getElementById("big_total_units").textContent = Math.round(totalUnits);
-
-      // const bigUnitsEl = document.getElementById("big_total_units");
-      // bigUnitsEl.textContent = Math.round(totalUnits);
-      // bigUnitsEl.dataset.monthlyUnits = totalUnits;
+      document.getElementById("total_units_per_month").textContent = Math.round(totalUnits);
+      document.getElementById("total_units_per_hour").textContent = totalUnitsHourly.toFixed(4);
 
       const bigUnitsEl = document.getElementById("big_total_units");
       bigUnitsEl.dataset.monthlyUnits = totalUnits;
-      updateUnitDisplay();  // re-renders based on current unit selection
+      updateUnitDisplay();
+      applyZebraStripes();
+    }
 
-      const totalCellHourly = document.getElementById("total_units_per_hour");
-      totalCellHourly.textContent = totalUnitsHourly.toFixed(4);
-
-      const row = document.getElementById("total_label");
-      const minMonthlySpend = minSpend / 12;
-      
-
-      if (0) {
-        if (totalUnits < minMonthlySpend) {
-          const remaining = (minMonthlySpend - totalUnits).toFixed(2);
-          row.innerHTML = `
-        <div>
-          <strong>Total</strong>
-          <a href="#min-spend-info" style="margin-left: 0.3em;">
-          <span style="font-size: 0.75em; margin-left: 0.5em;">
-            216.00 / 25,000 QBO Units —
-            <strong>24,784 left *</strong>
-          </span>
-           </a>
-        </div>
-          `;
-        } else {
-          row.innerHTML = `<strong>Total</strong>`;
-        }
-
-      }
-
-  }
 
   function updateUnitDisplay() {
     const select = document.getElementById("unit_display_select");
