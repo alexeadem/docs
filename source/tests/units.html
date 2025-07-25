@@ -380,7 +380,7 @@
       const discount = 0;
       const multiplier = envMultiplier;
       const usdDiscountFactor = 1 - discount / 100;
-      const hours = 720;
+      const hours = 730;
 
       const cpuField = document.getElementById("cpu_qty");
       let cpuQty = parseFloat(cpuField.value);
@@ -469,7 +469,7 @@
     let label = select.value;
 
     if (label === "hour") {
-      converted = monthly / 720;
+      converted = monthly / 730;
       displayEl.textContent = converted.toFixed(2); // show decimals for hourly
     } else if (label === "year") {
       converted = monthly * 12;
