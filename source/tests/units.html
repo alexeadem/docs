@@ -5,8 +5,8 @@
   <title>QBO Pricing Calculator</title>
   <style>
     table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
-    th, td { padding: 0.5em; border: 1px solid #ccc; text-align: left; width: 100%}
-    select, input { width: 60px; height: 35px;border-radius: 5px;padding: 5px; }
+    th, td { padding: 0.5em; border: 1px solid #ccc; text-align: left;}
+    select, input { width: 60px; border-radius: 5px;padding: 5px; }
     tfoot td { font-weight: bold; }
     .export-btn, .discount-btn, .gpu-btn {
       padding: 10px 16px;
@@ -18,14 +18,14 @@
       cursor: pointer;
     }
     .export-btn.open-sheet {
-  background: white;
-  color: #4783ef;
-  border: 1px solid #4783ef;
-}
-.export-btn.generating {
-  background: #ccc;
-  cursor: wait;
-}
+      background: white;
+      color: #4783ef;
+      border: 1px solid #4783ef;
+    }
+    .export-btn.generating {
+      background: #ccc;
+      cursor: wait;
+    }
     .article-content table td, .article-content table th {
       padding: 10px;
     }
@@ -74,7 +74,105 @@
       display: inline-block;
     }
     .gpu_model {
-      width: 200px;
+      width:
+       200px;
+    }
+    .unit-select {
+      font-size: 0.95em;
+      height: 20px;
+      padding: 0px;
+      width: 140px;
+      /* border-radius: 4px; */
+      border: 0px;
+      background: transparent;
+      color: #0047AB;
+      font-weight: bold;
+      text-align-last: right;
+      direction: rtl;
+      
+    }
+    .unit-select:focus {
+      outline: 0px
+    }
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      margin-bottom: 1em;
+    }
+
+    .summary-logo-cell {
+      border: 1px solid #ccc;
+      padding: 0.5em;
+      width: 150px;
+      text-align: center;
+    }
+
+    .summary-logo-cell img {
+      max-width: 60px;
+      max-height: 60px;
+      display: block;
+      margin: 0 auto;
+    }
+    .summary-display-cell {
+      position: relative;
+      height: 100px;
+      border: 1px solid #ccc;
+      width: 100%;
+    }
+
+    .summary-rate-line {
+      position: absolute;
+      top: 0.25em;
+      left: 0.5em;
+      font-size: 0.75em;
+      color: gray;
+      font-family: 'Courier New', monospace;
+    }
+
+    .summary-display {
+      position: absolute;
+      bottom: 0.5em;
+      right: 0.5em;
+      font-family: 'Courier New', monospace;
+      color: #0047AB;
+      text-shadow: 0 0 1px #0047AB;
+      text-align: right;
+    }
+
+    .summary-total {
+      font-size: 4em;
+      font-weight: bold;
+      line-height: 0.8;
+    }
+
+    .calculator-units {
+
+      text-align: right;
+    }
+
+    .gpu_units {
+
+      text-align: right;
+    }
+
+    .gpu_hourly {
+
+      text-align: right;
+    }
+
+    @font-face {
+      font-family: 'Digital7Mono';
+      src: url('/fonts/digital-7-mono.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    #big_total_units {
+      font-family: 'Digital7Mono', monospace;
+      font-size: 1.1em;
+      letter-spacing: 5px;
+      color: #0047AB;
+      font-weight: normal;
     }
   </style>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -83,38 +181,31 @@
   <body>
   <h2>QBO Unit Calculator</h2>
 
-
-  <table style="width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 1em;">
+  <table class="summary-table">
     <tr>
-      <td style="border: 1px solid #ccc; padding: 0.5em; width: 150px; text-align: center;">
-        <img src="/logo.svg" alt="QBO Logo" style="max-width: 60px; max-height: 60px; display: block; margin: 0 auto;">
+      <td class="summary-logo-cell">
+        <!-- <img src="/logo.svg" alt="QBO Logo" style="max-width: 60px; max-height: 60px; display: block; margin: 0 auto;"> -->
+        <img src="/logo.svg" alt="QBO Logo" class="summary-logo-img">
       </td>
-      <td style="position: relative; height: 100px; border: 1px solid #ccc;">
-        <div style="position: absolute; top: 0.25em; left: 0.5em; font-size: 0.75em; color: gray;">
+      <td class="summary-display-cell">
+
+        <!-- <div class="summary-rate-line">
           1 QBO Unit = <span id="usd_per_unit_top">1.00 USD</span>
-        </div>
-        <div style="
-        position: absolute;
-        bottom: 0.5em;
-        right: 0.5em;
-        font-family: 'Courier New', monospace;
-        color: #0047AB;
-        text-shadow: 0 0 1px #0047AB;
-        text-align: right;
-      ">
-          <div style="font-size: 4em; font-weight: bold; line-height: 0.8;">
+        </div> -->
+
+        <div class="summary-display">
+          <div class="summary-total">
             <span id="big_total_units">0.00</span>
           </div>
-          <div style="font-size: 0.75em;">
-            units/month
-          </div>
+          <select id="unit_display_select" class="unit-select" onchange="updateUnitDisplay()">
+            <option value="month" selected>units/month</option>
+            <option value="hour">units/hour</option>
+            <option value="year">units/year</option>
+          </select>
         </div>
       </td>
     </tr>
   </table>
-  
-  
-  
   
   
 
@@ -131,34 +222,34 @@
       <tr>
         <td>CPU Core</td>
         <td><input type="number" value="1" id="cpu_qty" min="0" ></td>
-        <td id="cpu_hourly"></td>
-        <td id="cpu_units"></td>
+        <td class="calculator-units" id="cpu_hourly"></td>
+        <td class="calculator-units" id="cpu_units"></td>
       </tr>
       <tbody id="gpu-rows"></tbody>
       <tr>
         <td>RAM (GB)</td>
         <td><input type="number" value="0" id="ram_qty" min="0" onchange="calculate()"></td>
-        <td id="ram_hourly"></td>
-        <td id="ram_units"></td>
+        <td class="calculator-units" id="ram_hourly"></td>
+        <td class="calculator-units" id="ram_units"></td>
       </tr>
       <tr>
         <td>Disk (GB)</td>
         <td><input type="number" value="0" id="disk_qty" min="0" onchange="calculate()"></td>
-        <td id="disk_hourly"></td>
-        <td id="disk_units"></td>
+        <td class="calculator-units" id="disk_hourly"></td>
+        <td class="calculator-units" id="disk_units"></td>
       </tr>
       <tr>
         <td>Network (TB)</td>
         <td><input type="number" value="0" id="net_qty" min="0" onchange="calculate()"></td>
-        <td id="net_hourly"></td>
-        <td id="net_units"></td>
+        <td class="calculator-units" id="net_hourly"></td>
+        <td class="calculator-units" id="net_units"></td>
       </tr>
     </tbody>
     <tfoot>
       <tr>
         <td id="total_label" colspan="2">Total</td>
-        <td id="total_units_per_hour"></td>
-        <td id="total_units_per_month"></td>
+        <td class="calculator-units" id="total_units_per_hour"></td>
+        <td class="calculator-units" id="total_units_per_month"></td>
       </tr>
     </tfoot>
   </table>
@@ -342,7 +433,15 @@
       totalCell.textContent = Math.round(totalUnits);
 
       // Update the large calculator-style number
-      document.getElementById("big_total_units").textContent = Math.round(totalUnits);
+      // document.getElementById("big_total_units").textContent = Math.round(totalUnits);
+
+      // const bigUnitsEl = document.getElementById("big_total_units");
+      // bigUnitsEl.textContent = Math.round(totalUnits);
+      // bigUnitsEl.dataset.monthlyUnits = totalUnits;
+
+      const bigUnitsEl = document.getElementById("big_total_units");
+      bigUnitsEl.dataset.monthlyUnits = totalUnits;
+      updateUnitDisplay();  // re-renders based on current unit selection
 
       const totalCellHourly = document.getElementById("total_units_per_hour");
       totalCellHourly.textContent = totalUnitsHourly.toFixed(4);
@@ -372,10 +471,30 @@
       }
 
   }
-    addGpuRow();
-    toggleFields();
-    calculate();
-    document.getElementById("cpu_qty").addEventListener("input", calculate);
+
+  function updateUnitDisplay() {
+    const select = document.getElementById("unit_display_select");
+    const displayEl = document.getElementById("big_total_units");
+    const monthly = parseFloat(displayEl.dataset.monthlyUnits || 0);
+
+    let converted = monthly;
+    let label = select.value;
+
+    if (label === "hour") {
+      converted = monthly / 720;
+      displayEl.textContent = converted.toFixed(2); // show decimals for hourly
+    } else if (label === "year") {
+      converted = monthly * 12;
+      displayEl.textContent = Math.round(converted); // no decimals
+    } else {
+      displayEl.textContent = Math.round(monthly); // month: whole number
+    }
+  }
+
+  addGpuRow();
+  toggleFields();
+  calculate();
+  document.getElementById("cpu_qty").addEventListener("input", calculate);
   </script>
 <div style="margin-top: 2em; padding: 1em; color: #555; font-size: 0.9em;">
   <h3 style="margin-top: 0;">What Are QBO Units?</h3>
