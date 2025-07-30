@@ -5,7 +5,7 @@ title: VSCode
 
 {% preview "vscode.svg" %}
 
-The **QBO VSCode extension** enables developers and ML engineers to seamlessly connect to GPU-powered QBO infrastructure directly from Visual Studio Code. With support for Remote SSH, Kubernetes clusters, and live host selection, it simplifies development workflows for AI, HPC, and cloud-native workloads running directly on metal — **without virtualization**.
+The [**QBO VSCode extension**](https://marketplace.visualstudio.com/items?itemName=qbo.qbo-vscode-client) enables developers and ML engineers to seamlessly connect to GPU-powered QBO infrastructure directly from Visual Studio Code. With support for Remote SSH, Kubernetes clusters, and live host selection, it simplifies development workflows for AI, HPC, and cloud-native workloads running directly on metal — **without virtualization**.
 
 
 {% youtube DKWPNQ_a28w %}
