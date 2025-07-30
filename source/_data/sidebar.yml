@@ -16,9 +16,11 @@ docs:
     api: api.html
   conformance:
     sonobuoy: sonobuoy.html
+  calculators:
+    calc_metal: compute.html
+    calc_unit: units.html
   glossary:
     def: def.html
-    calc: calculator.html
 index:
   getting_started:
     overview: index.html
@@ -37,9 +39,11 @@ index:
     api: docs/api.html
   conformance:
     sonobuoy: docs/sonobuoy.html
+  calculators:
+    calc_metal: docs/compute.html
+    calc_unit: docs/units.html
   glossary:
     def: docs/def.html
-    calc: docs/calculator.html
 
 #resources:
 #  docs: 

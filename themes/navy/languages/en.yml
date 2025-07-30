@@ -51,7 +51,9 @@ sidebar:
     sonobuoy: Sonobuoy
     glossary: Glossary
     def: Definitions
-    calc: Calculator
+    calculators: Calculators
+    calc_metal: Compute
+    calc_unit: Units
   index:
     getting_started: Getting Started
     overview: Overview
@@ -74,7 +76,9 @@ sidebar:
     sonobuoy: Sonobuoy
     glossary: Glossary
     def: Definitions
-    calc: Calculator
+    calculators: Calculators
+    calc_metal: Compute
+    calc_unit: Units
   # resources:
   #   blogs: Blogs
   #   demos: Demos
