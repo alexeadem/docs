@@ -10,7 +10,7 @@ title: Units Calculator
     table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
     th, td { padding: 0.5em; border: 1px solid #ccc; text-align: left;}
     select, input { width: 60px; border-radius: 5px;padding: 5px; }
-    tfoot td { font-weight: bold; }
+    tfoot td { font-weight: bold; white-space: nowrap; }
     .export-btn, .discount-btn, .gpu-btn {
       padding: 10px 16px;
       border-radius: 5px;
@@ -32,8 +32,12 @@ title: Units Calculator
       background: #ccc;
       cursor: wait;
     }
-    .article-content table td, .article-content table th {
+    .article-content table td {
       padding: 10px;
+    }
+    .article-content table th {
+      padding: 10px;
+      width: auto;
     }
     #customer_email {
       box-sizing: border-box;
@@ -44,7 +48,6 @@ title: Units Calculator
       position: relative;
       display: inline-block;
       width: 100%;
-      
     }
     #email_table {
       height: 80px;

@@ -101,6 +101,10 @@ This calculator translates your claimed vCPU and RAM allocations in a shared clo
       height: auto;
       display: block;
     }
+    .article-content table th {
+      padding: 10px;
+      width: auto;
+    }
 }
 
   </style>

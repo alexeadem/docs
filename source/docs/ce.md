@@ -10,6 +10,14 @@ Create, deploy, and manage Kubernetes resources on your local machine with QBO K
 
 #### Prerequisites
 
+  <!-- <style>
+.article-content table th {
+      padding: 10px;
+      width: 100%;
+      white-space: nowrap;
+    }
+  </style> -->
+
 | Dependency         | Validated or Included Version(s) | Notes |
 | ------------------ | -------------------------------- | ----- |
 | Docker API         | 1.41                             |       |

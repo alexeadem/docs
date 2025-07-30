@@ -38,27 +38,34 @@ To handle dynamic operations and diverse data sources, QBO uses websockets for r
 
 ## Features
 
+  <style>
+.article-content table th {
+      padding: 10px;
+      width: 100%;
+    }
+  </style>
+  
 | Feature                       | CLOUD | CE  | Notes |
 | ----------------------------- | ----- | --- | ----- |
-| Multi-cluster management      | X     | X   |
-| Cluster scaling               | X     | X   |
-| In-memory cache               | X     |     |
-| SSL                           | X     |     |
-| Google OAuth2                 | X     |     |
-| Cloud Load Balancer           | X     |     |
-| IP Network management         | X     |     |
-| Service Accounts              | X     |     |
-| Kubeconfig management         | X     | X   |
-| Kubernetes API Integration    | X     |     |
-| CNI kindnet                   | X     | X   |
-| Persistent Storage            | X     | X   |
-| Gitlab Registry               |       | X   |
-| Docker Hub Registry           | X     | X   |
-| Kind Kubernetes image support | X     | X   |
-| Custom image support          | X     | X   |
-| Websockets API                | X     | X   |
-| CLI                           | X     | X   |
-| Web interface                 | X     | X   |
-| Web terminal                  | X     | X   |
-| Kubernetes Engine (QKE)       | X     | X   |
-| Container Engine (QCE)        | X     |     |
+| Multi-cluster management      | X     | X   |       |
+| Cluster scaling               | X     | X   |       |
+| In-memory cache               | X     |     |       |
+| SSL                           | X     |     |       |
+| Google OAuth2                 | X     |     |       |
+| Cloud Load Balancer           | X     |     |       |
+| IP Network management         | X     |     |       |
+| Service Accounts              | X     |     |       |
+| Kubeconfig management         | X     | X   |       |
+| Kubernetes API Integration    | X     |     |       |
+| CNI kindnet                   | X     | X   |       |
+| Persistent Storage            | X     | X   |       |
+| Gitlab Registry               |       | X   |       |
+| Docker Hub Registry           | X     | X   |       |
+| Kind Kubernetes image support | X     | X   |       |
+| Custom image support          | X     | X   |       |
+| Websockets API                | X     | X   |       |
+| CLI                           | X     | X   |       |
+| Web interface                 | X     | X   |       |
+| Web terminal                  | X     | X   |       |
+| Kubernetes Engine (QKE)       | X     | X   |       |
+| Container Engine (QCE)        | X     |     |       |
