@@ -1,15 +1,16 @@
 ---
-title: Units Calculator	
+title: Units Calculator
 ---
 
 ## Unit Calculator
 
 {% raw %}
+
 <div>
   <style>
     table { border-collapse: collapse; width: 100%; margin-bottom: 1em; }
     th, td { padding: 0.5em; border: 1px solid #ccc; text-align: left;}
-    select, input { width: 60px; border-radius: 5px;padding: 5px; }
+    select, input { width: 80px; border-radius: 5px;padding: 5px; }
     tfoot td { font-weight: bold; white-space: nowrap; }
     .export-btn, .discount-btn, .gpu-btn {
       padding: 10px 16px;
@@ -183,6 +184,7 @@ title: Units Calculator
       color: #0047AB;
       font-weight: normal;
     }
+
   </style>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js"></script>
@@ -206,24 +208,24 @@ title: Units Calculator
             <span id="big_total_units">0.00</span>
           </div>
           <select id="unit_display_select" class="unit-select" onchange="updateUnitDisplay()">
-            <option value="month" selected>units/month</option>
+            <option value="year" selected>units/year</option>
+            <option value="month">units/month</option>
             <option value="hour">units/hour</option>
-            <option value="year">units/year</option>
           </select>
         </div>
       </td>
     </tr>
+
   </table>
-  
-  
+
 
   <table>
     <thead>
       <tr>
         <th>Resource Type</th>
         <th>Quantity</th>
-        <th>Hourly QBO Units</th>
-        <th>Monthly QBO Units</th>
+        <th>Hourly Reference</th>
+        <th>Monthly Reference</th>
       </tr>
     </thead>
     <tbody id="calc-body">
@@ -265,48 +267,47 @@ title: Units Calculator
       </tr>
     </tfoot>
   </table>
-  
 
   <script>
 
-    const cpuRate = 0.025;
-    const ramRate = 0.005;
-    const diskRate = 0.0005;
-    const netRate = 0.25;
+    const cpuRate = 0.050;
+    const ramRate = 0.0045;
+    const diskRate = 0.00030;
+    const netRate = 0.02;
     const minSpend = 25000;
 
 
     const gpuRates = {
-      "GB300": 4.00,
-      "GB200": 5.50,
-      "B200": 5.45,
-      "H200": 3.40,
-      "A2000": 0.45,
-      "A100 80GB": 1.70,
-      "A100 40GB": 1.06,
-      "H100": 2.50,
-      "L40S": 1.30,
-      "L4": 1.25,
-      "RTX A6000": 1.75,
-      "RTX 6000 Ada": 2.25,
-      "RTX A5000": 1.50,
-      "RTX 3090": 1.20,
-      "RTX 3080": 1.00,
-      "RTX 3070": 0.80,
-      "T4": 0.60,
-      "V100 32GB": 1.10,
-      "V100 16GB": 0.85,
-      "P100": 1.00,
-      "P40": 0.75,
-      "A2": 0.40,
-      "K80": 0.20,
-      "Jetson Nano": 0.08,
-      "Jetson TX1": 0.10,
-      "Jetson TX2": 0.12,
-      "Jetson Xavier NX": 0.25,
-      "Jetson AGX Xavier": 0.40,
-      "Jetson Orin NX": 0.60,
-      "Jetson Orin AGX": 0.80
+      "GB300": 18.00,
+      "GB200": 16.00,
+      "B200": 15.00,
+      "H200": 13.00,
+      "A2000": 2.00,
+      "A100 80GB": 9.50,
+      "A100 40GB": 7.50,
+      "H100": 12.50,
+      "L40S": 6.00,
+      "L4": 3.50,
+      "RTX A6000": 5.50,
+      "RTX 6000 Ada": 7.00,
+      "RTX A5000": 4.50,
+      "RTX 3090": 3.00,
+      "RTX 3080": 2.25,
+      "RTX 3070": 1.75,
+      "T4": 2.00,
+      "V100 32GB": 5.00,
+      "V100 16GB": 4.00,
+      "P100": 3.00,
+      "P40": 2.25,
+      "A2": 1.50,
+      "K80": 0.75,
+      "Jetson Nano": 0.25,
+      "Jetson TX1": 0.35,
+      "Jetson TX2": 0.45,
+      "Jetson Xavier NX": 0.90,
+      "Jetson AGX Xavier": 1.25,
+      "Jetson Orin NX": 1.75,
+      "Jetson Orin AGX": 2.50
     };
 
 
@@ -478,9 +479,9 @@ title: Units Calculator
       displayEl.textContent = converted.toFixed(2); // show decimals for hourly
     } else if (label === "year") {
       converted = monthly * 12;
-      displayEl.textContent = Math.round(converted); // no decimals
+      displayEl.textContent = Math.round(converted);
     } else {
-      displayEl.textContent = Math.round(monthly); // month: whole number
+      displayEl.textContent = Math.round(monthly);
     }
   }
 
@@ -495,9 +496,9 @@ title: Units Calculator
 
 ### What Are QBO Units?
 
-**QBO Units** are a standardized way to represent compute capacity within QBO. They abstract CPU, GPU, RAM, disk, and network into a single, unified unit — making it easier to plan and scale workloads across any hardware or environment.
+**QBO Units** are a standardized way to represent infrastructure class within QBO. They normalize CPU, GPU, RAM, disk, and network specifications into a single, unified licensing unit, making it easier to plan and scale infrastructure across any hardware or environment.
 
-Think of QBO Units like **fuel for your infrastructure**: you’re not paying for each mile driven, but rather filling your tank with enough fuel to complete the journey. This calculator helps answer the core question: **“How many Units will I need to run my workloads?”**
+Think of QBO Units as a normalized hardware profile for your infrastructure. They represent the class of system capacity made available to QBO, not metered consumption over time. This calculator helps answer the core question: **“How many QBO Units apply to this hardware profile?”**
 
 For reference, 1 QBO Unit is generally equivalent to **$1.00 USD**. If you're planning a large deployment or want custom pricing, please [contact our sales team](https://qbo.io/contact-us/) to learn more about volume discounts.
 
@@ -505,40 +506,36 @@ For reference, 1 QBO Unit is generally equivalent to **$1.00 USD**. If you're pl
 
 ### Why Use QBO Units?
 
-- **Simplified Planning:** Estimate compute needs clearly across diverse workloads and hardware types.  
-- **Hardware-Agnostic:** From A100s to Jetsons, all resources are priced and compared the same way.  
-- **Cross-Environment Compatible:** Use the same unit system in cloud, on-prem, airgapped, or hybrid setups.  
-- **Not Tied to Utilization:** QBO Units represent *access* to compute — not metered consumption or overage fees.  
-- **Predictable Accounting:** Because each unit maps to $1.00 (before discount), teams can easily forecast and track costs.  
-- **Budget & Quota Friendly:** Pre-purchase Units, assign to teams, and track usage over time — just like prepaid fuel for your infrastructure.
+- **Simplified Planning:** Classify infrastructure consistently across diverse hardware types.
+- **Hardware-Agnostic:** From A100s to Jetsons, all resources are priced and compared the same way.
+- **Cross-Environment Compatible:** Use the same unit system in cloud, on-prem, airgapped, or hybrid setups.
+- **Not Tied to Utilization:** QBO Units represent a fixed platform license based on the hardware profile. There are no overage charges as long as the hardware configuration remains unchanged.
+- **Predictable Accounting:** Because each unit maps to $1.00 USD, teams can easily forecast and track costs.
+- **Budget & Quota Friendly:** Assign QBO Units by system class and forecast platform cost consistently across teams and environments.
 
 ---
 
 ### Using the Calculator
 
-1. **Define Your Workload**
+1. **Define Your Hardware Profile**
+
    - Enter the number of **CPU cores** and select your **GPU models**.
-   - Specify your expected **RAM**, **disk**, and **network** needs.
+   - Specify the system’s **RAM**, **disk**, and **network** specifications.
    - If a Jetson model is selected, CPU values are auto-filled and locked.
 
 2. **Get Your Estimate**
-   - View both **hourly** and **monthly** QBO Unit totals based on your input.
-   - Use this estimate to understand how far your compute fuel will take you — and how to size your workload accordingly.
+
+- View the annualized QBO Unit profile for the selected hardware configuration.
+- Use this estimate to classify the system and determine the fixed QBO platform license for that hardware profile.
 
 ---
 
 ### Annual Minimum for Customer-Provided Metal
 
-When deploying on your own hardware (On-Prem), QBO requires a minimum commitment. This ensures sufficient usage to support onboarding, support, and resource scheduling across your infrastructure.
+When deploying on your own hardware (On-Prem), QBO requires a minimum commitment. This ensures sufficient usage to support onboarding, support, and platform operations across your infrastructure.
 
 This minimum only applies to customer-owned infrastructure. There is no minimum when running workloads in QBO’s cloud environments.
 
 ---
 
-**Important:** QBO Units are not tied to real-time usage or metering. They represent *reserved access* to compute resources — similar to buying fuel before a trip. For full details, read our [QBO Units Terms of Service](terms).
-
-
-
-  
-  
-
+**Important:** QBO Units are not tied to real-time usage or bandwidth metering. They represent a fixed annual platform license based on the hardware profile. For full details, read our [QBO Units Terms of Service](terms).
