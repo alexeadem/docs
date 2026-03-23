@@ -273,20 +273,20 @@ title: Units Calculator
 
     const cpuRate = 0.020;
     const ramRate = 0.005;
-    const diskRate = 0.000005;
-    const netRate = 0.05;
+    const diskRate = 0.000025;
+    const netRate = 0.25;
     const minSpend = 25000;
 
 
     const gpuRates = {
-      "GB300": 4.00,
-      "GB200": 5.50,
-      "B200": 5.45,
-      "H200": 3.40,
+      "GB300": 7.0,
+      "GB200": 6.5,
+      "B200": 6.0,
+      "H200": 4.5,
       "A2000": 0.45,
-      "A100 80GB": 1.70,
+      "A100 80GB": 3.9,
       "A100 40GB": 1.06,
-      "H100": 2.50,
+      "H100": 6.0,
       "L40S": 1.30,
       "L4": 1.25,
       "RTX A6000": 1.75,
