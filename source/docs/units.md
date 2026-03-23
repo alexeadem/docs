@@ -271,10 +271,10 @@ title: Units Calculator
 
   <script>
 
-    const cpuRate = 0.025;
+    const cpuRate = 0.020;
     const ramRate = 0.005;
-    const diskRate = 0.0002;
-    const netRate = 0.25;
+    const diskRate = 0.000005;
+    const netRate = 0.05;
     const minSpend = 25000;
 
 
