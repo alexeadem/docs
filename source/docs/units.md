@@ -520,7 +520,7 @@ Think of QBO Units as a normalized hardware profile for your infrastructure. The
 1. **Define Your Hardware Profile**
 
     - Enter the number of **CPU cores** and select your **GPU models**.
-    - Specify the system’s total **RAM**, **disk** and **network speed** specifications.
+    - Specify the system’s total **RAM**, **disk** and **network** interfaces specifications.
     - If a Jetson model is selected, CPU values are auto-filled and locked.
     - This calculator is for reference only. QBO will calculate this automatically once deployed on the system.
    
