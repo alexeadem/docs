@@ -199,9 +199,6 @@ title: Units Calculator
       </td>
       <td class="summary-display-cell">
 
-        <!-- <div class="summary-rate-line">
-          1 QBO Unit = <span id="usd_per_unit_top">1.00 USD</span>
-        </div> -->
 
         <div class="summary-display">
           <div class="summary-total">
@@ -501,7 +498,6 @@ title: Units Calculator
 
 Think of QBO Units as a normalized hardware profile for your infrastructure. They represent the class of system capacity made available to QBO, not metered consumption over time. This calculator helps answer the core question: **“How many QBO Units apply to this hardware profile?”**
 
-For reference, 1 QBO Unit is generally equivalent to **$1.00 USD**. If you're planning a large deployment or want custom pricing, please [contact our sales team](https://qbo.io/contact-us/) to learn more about volume discounts.
 
 ---
 
@@ -511,7 +507,7 @@ For reference, 1 QBO Unit is generally equivalent to **$1.00 USD**. If you're pl
 - **Hardware-Agnostic:** From A100s to Jetsons, all resources are priced and compared the same way.
 - **Cross-Environment Compatible:** Use the same unit system in cloud, on-prem, airgapped, or hybrid setups.
 - **Not Tied to Utilization:** QBO Units represent a fixed platform license based on the hardware profile. There are no overage charges as long as the hardware configuration remains unchanged.
-- **Predictable Accounting:** Because each unit maps to $1.00 USD, teams can easily forecast and track costs.
+- **Predictable Accounting:** Teams can easily forecast and track costs by calculating units based on hardware profiles.
 - **Budget & Quota Friendly:** Assign QBO Units by system class and forecast platform cost consistently across teams and environments.
 
 ---
@@ -533,7 +529,7 @@ For reference, 1 QBO Unit is generally equivalent to **$1.00 USD**. If you're pl
 
 ### Annual Minimum for Customer-Provided Metal
 
-When deploying on your own hardware (On-Prem), QBO requires a minimum commitment. This ensures sufficient usage to support onboarding, support, and platform operations across your infrastructure.
+When deploying on your own hardware (On-Prem), QBO requires a minimum commitment of 25,000 units. This ensures sufficient usage to support onboarding, support, and platform operations across your infrastructure.
 
 This minimum only applies to customer-owned infrastructure. There is no minimum when running workloads in QBO’s cloud environments.
 
