@@ -250,7 +250,7 @@ title: Units Calculator
         <td class="calculator-units" id="disk_units"></td>
       </tr>
       <tr>
-        <td>Network (TB)</td>
+        <td>Network (GB)</td>
         <td><input type="number" value="0" id="net_qty" min="0" onchange="calculate()"></td>
         <td class="calculator-units" id="net_hourly"></td>
         <td class="calculator-units" id="net_units"></td>
@@ -425,7 +425,8 @@ title: Units Calculator
 
       const ramQty = parseFloat(document.getElementById("ram_qty").value);
       const diskQty = parseFloat(document.getElementById("disk_qty").value);
-      const netQty = parseFloat(document.getElementById("net_qty").value);
+      const netQtyGB = parseFloat(document.getElementById("net_qty").value);
+      const netQty = netQtyGB / 1024;
 
       const cpuMonthly = cpuQty * cpuRate * multiplier * hours;
       const ramMonthly = ramQty * ramRate * multiplier * hours;
@@ -494,7 +495,7 @@ title: Units Calculator
 
 ### What Are QBO Units?
 
-**QBO Units** are a standardized way to represent infrastructure class within QBO. They normalize CPU, GPU, RAM, disk, and network specifications into a single, unified licensing unit, making it easier to plan and scale infrastructure across any hardware or environment.
+**QBO Units** are a standardized way to represent infrastructure class within QBO. They normalize CPU, GPU, RAM, disk, and network interface speed specifications into a single, unified licensing unit, making it easier to plan and scale infrastructure across any hardware or environment.
 
 Think of QBO Units as a normalized hardware profile for your infrastructure. They represent the class of system capacity made available to QBO, not metered consumption over time. This calculator helps answer the core question: **“How many QBO Units apply to this hardware profile?”**
 
@@ -505,7 +506,8 @@ Think of QBO Units as a normalized hardware profile for your infrastructure. The
 
 - **Simplified Planning:** Classify infrastructure consistently across diverse hardware types.
 - **Hardware-Agnostic:** From A100s to Jetsons, all resources are priced and compared the same way.
-- **Cross-Environment Compatible:** Use the same unit system in cloud, on-prem, airgapped, or hybrid setups.
+- **Cross-Environment:** Use the same unit system in cloud, on-prem, airgapped, or hybrid setups.
+- **Cross-Hardware:** Use the same QBO unit pool across all hardware platforms.
 - **Not Tied to Utilization:** QBO Units represent a fixed platform license based on the hardware profile. There are no overage charges as long as the hardware configuration remains unchanged.
 - **Predictable Accounting:** Teams can easily forecast and track costs by calculating units based on hardware profiles.
 - **Budget & Quota Friendly:** Assign QBO Units by system class and forecast platform cost consistently across teams and environments.
@@ -516,14 +518,15 @@ Think of QBO Units as a normalized hardware profile for your infrastructure. The
 
 1. **Define Your Hardware Profile**
 
-   - Enter the number of **CPU cores** and select your **GPU models**.
-   - Specify the system’s **RAM**, **disk**, and **network** specifications.
-   - If a Jetson model is selected, CPU values are auto-filled and locked.
-
+    - Enter the number of **CPU cores** and select your **GPU models**.
+    - Specify the system’s total **RAM**, **disk** and **network speed** specifications.
+    - If a Jetson model is selected, CPU values are auto-filled and locked.
+    - This calculator is for reference only. QBO will calculate this automatically once deployed on the system.
+   
 2. **Get Your Estimate**
 
-- View the annualized QBO Unit profile for the selected hardware configuration.
-- Use this estimate to classify the system and determine the fixed QBO platform license for that hardware profile.
+   - View the annualized QBO Unit profile for the selected hardware configuration.
+   - Use this estimate to classify the system and determine the fixed QBO platform license for that hardware profile.
 
 ---
 
