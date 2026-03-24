@@ -280,6 +280,7 @@ title: Units Calculator
       "GB200": 5.50,
       "B200": 5.45,
       "H200": 3.40,
+      "RTX PRO 6000 Blackwell": 3.80,
       "A2000": 0.45,
       "A100 80GB": 1.70,
       "A100 40GB": 1.06,
