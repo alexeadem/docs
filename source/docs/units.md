@@ -79,11 +79,20 @@ title: Units Calculator
       align-items: center;
       gap: 10px;
     }
+    .cpu-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
     .discount-controls span {
       min-width: 40px;
       display: inline-block;
     }
     .gpu_model {
+      width:
+       200px;
+    }
+    .cpu_model {
       width:
        200px;
     }
@@ -227,7 +236,15 @@ title: Units Calculator
     </thead>
     <tbody id="calc-body">
       <tr>
-        <td>CPU Core</td>
+        <td>
+        <div class="cpu-controls">
+        CPU
+        <select class="cpu_model" id="cpu_type">
+          <option value="server" selected>Intel Xeon / AMD EPYC</option>
+          <option value="other">Other</option>
+        </select>
+        </div>
+      </td>
         <td><input type="number" value="1" id="cpu_qty" min="0"></td>
         <td class="calculator-units" id="cpu_hourly"></td>
         <td class="calculator-units" id="cpu_units"></td>
@@ -268,19 +285,20 @@ title: Units Calculator
 
   <script>
 
-    const cpuRate = 0.025;
-    const ramRate = 0.005;
-    const diskRate = 0.000025;
-    const netRate = 0.25;
+    const cpuRate = 0.09;
+    const ramRate = 0.0025;
+    const diskRate = 0.000015;
+    const netRate = 0.15;
     const minSpend = 25000;
 
 
     const gpuRates = {
-      "GB300": 4.00,
-      "GB200": 5.50,
-      "B200": 5.45,
-      "H200": 3.40,
-      "RTX PRO 6000 Blackwell": 3.80,
+      "GB300": 2.25,
+      "GB200": 2.25,
+      "B200": 2.25,
+      "H200": 2.25,
+      "RTX PRO 6000 Blackwell": 2.25,
+      "GB10": 0.015,
       "A2000": 0.45,
       "A100 80GB": 1.70,
       "A100 40GB": 1.06,
@@ -300,24 +318,20 @@ title: Units Calculator
       "P40": 0.75,
       "A2": 0.40,
       "K80": 0.20,
-      "Jetson Nano": 0.08,
-      "Jetson TX1": 0.10,
-      "Jetson TX2": 0.12,
-      "Jetson Xavier NX": 0.25,
-      "Jetson AGX Xavier": 0.40,
-      "Jetson Orin NX": 0.60,
-      "Jetson Orin AGX": 0.80
     };
 
 
     const jetsonCpuCores = {
-      "Jetson Nano": 4, "Jetson TX1": 4, "Jetson TX2": 6, "Jetson Xavier NX": 6,
-      "Jetson AGX Xavier": 8, "Jetson Orin NX": 8, "Jetson Orin AGX": 12
+      "GB10": 20
+    };
+
+    const cpuTypeMultiplier = {
+      server: 1.0,
+      other: 0.25
     };
 
 
     
-
     function toggleFields() {
       ["ram_qty", "disk_qty", "net_qty"].forEach(id => {
         document.getElementById(id).disabled = false; // Always enabled
@@ -354,8 +368,22 @@ title: Units Calculator
     }
 
     function attachGpuHandlers() {
-      document.querySelectorAll('.gpu_model, .gpu_qty').forEach(el => el.onchange = calculate);
+      document.querySelectorAll('.gpu_model').forEach(el => el.onchange = (e) => {
+        const row = e.target.closest('tr');
+        const model = row.querySelector('.gpu_model').value;
+        const qtyField = row.querySelector('.gpu_qty');
+
+        if (jetsonCpuCores[model]) {
+          qtyField.value = 1;
+        }
+
+        calculate();
+      });
+
+      document.querySelectorAll('.gpu_qty').forEach(el => el.onchange = calculate);
+
       document.querySelectorAll('.gpu-plus').forEach(btn => btn.onclick = () => addGpuRow());
+
       document.querySelectorAll('.gpu-minus').forEach(btn => btn.onclick = (e) => {
         if (document.querySelectorAll('.gpu-minus').length > 1) {
           e.target.closest('tr').remove();
@@ -429,12 +457,26 @@ title: Units Calculator
       const netQtyGB = parseFloat(document.getElementById("net_qty").value);
       const netQty = netQtyGB / 1024;
 
-      const cpuMonthly = cpuQty * cpuRate * multiplier * hours;
+      const cpuType = document.getElementById("cpu_type").value;
+      let effectiveCpuRate = cpuRate * (cpuTypeMultiplier[cpuType] || 1.0);
+
+
+      if (cpuOverridden) {
+        effectiveCpuRate = cpuRate * 0.06;
+      } 
+      else if (gpuTotal > 0) {
+        effectiveCpuRate = cpuRate * 0.5;
+      }
+   
+
+      const cpuMonthly = cpuQty * effectiveCpuRate * multiplier * hours;
+
+
       const ramMonthly = ramQty * ramRate * multiplier * hours;
       const diskMonthly = diskQty * diskRate * multiplier * hours;
       const netMonthly = netQty * netRate * multiplier * hours;
 
-      const cpuHourly = cpuQty * cpuRate * multiplier;
+      const cpuHourly = cpuQty * effectiveCpuRate * multiplier;
       const ramHourly = ramQty * ramRate * multiplier;
       const diskHourly = diskQty * diskRate * multiplier;
       const netHourly = netQty * netRate * multiplier;
