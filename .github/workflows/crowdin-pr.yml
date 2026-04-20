@@ -29,7 +29,7 @@ jobs:
       matrix:
         lc: [ko, pt-BR, ru, th, zh-CN, zh-TW, ja] # Target languages https://developer.crowdin.com/language-codes/
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Get BOT token
         id: get_bot_token
